@@ -123,6 +123,7 @@ void Server::initServer() {
 void Server::run() {
     while (true) {
         int poll_count = poll(&_poll_fds[0], _poll_fds.size(), -1);
+        std::cout << poll_count << std::endl;
         if (poll_count == -1) {
             throw std::runtime_error("Poll failed");
         }
@@ -131,8 +132,10 @@ void Server::run() {
             if (_poll_fds[i].revents & POLLIN) {
                 if (_poll_fds[i].fd == _server_fd) {
                     acceptConnections();
+                    std::cout << "Conection" << std::endl;
                 } else {
                     handleClient(_poll_fds[i].fd);
+                    std::cout << _poll_fds[i].fd << std::cout;
                 }
             }
         }
@@ -162,6 +165,12 @@ void Server::handleClient(int client_fd) {
     char buffer[512];
     int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received <= 0) {
+        if (bytes_received == 0) {
+            // Le client a fermé la connexion
+            std::cout << "Client déconnecté : " << client_fd << std::endl;
+        } else {
+            std::cerr << "Erreur : réception échouée pour le client " << client_fd << std::endl;
+        }
         removeClient(client_fd);
         return;
     }
@@ -169,9 +178,23 @@ void Server::handleClient(int client_fd) {
     buffer[bytes_received] = '\0';
     std::string message(buffer);
 
-    // Handle the message (authentication, commands, etc.)
-    // This part will be implemented later
+    // Récupérer le client correspondant
+    Client* client = _clients[client_fd];
+
+    // Ajouter le message au tampon du client
+    client->appendBuffer(message);
+
+    // Traiter les commandes complètes
+    std::string command;
+    while (!(command = client->getNextCommand()).empty()) {
+        // Enregistrer la commande dans les logs
+        logMessage("[" + getCurrentTime() + "] " + client->getNickname() + ": " + command);
+
+        // Traiter la commande
+        processCommand(client, command);
+    }
 }
+
 
 void Server::removeClient(int client_fd) {
     close(client_fd);
@@ -221,6 +244,7 @@ void Server::processCommand(Client* client, const std::string& command) {
     iss >> cmd;
 
     if (cmd == "JOIN") {
+        std::cout << "Commande JOIN detecter" << std::endl;
         std::string params;
         std::getline(iss, params);
         cmdJoin(client, params);
@@ -233,6 +257,7 @@ void Server::processCommand(Client* client, const std::string& command) {
         std::getline(iss, params);
         cmdPrivmsg(client, params);
     } else if (cmd == "KICK") {
+        std::cout << "KICK" << std::endl;
         std::string params;
         std::getline(iss, params);
         cmdKick(client, params);
@@ -545,4 +570,3 @@ void Server::cmdTopic(Client* client, const std::string& params) {
         channel->broadcast(response, NULL);
     }
 }
-
