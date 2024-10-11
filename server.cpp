@@ -188,12 +188,13 @@ void Server::handleClient(int client_fd) {
     std::string command;
     while (!(command = client->getNextCommand()).empty()) {
         // Enregistrer la commande dans les logs
-        logMessage("[" + getCurrentTime() + "] " + client->getNickname() + ": " + command);
+        logMessage(client->getNickname() + ": " + command);
 
         // Traiter la commande
         processCommand(client, command);
     }
 }
+
 
 
 void Server::removeClient(int client_fd) {
@@ -211,78 +212,138 @@ void Server::removeClient(int client_fd) {
 
 void Server::cmdPrivmsg(Client* client, const std::string& params) {
     std::istringstream iss(params);
-    std::string target, message;
+    std::string target;
     iss >> target;
+    
+    std::string message;
     std::getline(iss, message);
     
-    if (target.empty() || message.empty()) {
-        sendNumericReply(client, 411, ":No recipient given (PRIVMSG)");
+    if (target.empty()) {
+        sendNumericReply(client, 411, ":No recipient given (PRIVMSG)"); // ERR_NORECIPIENT
         return;
     }
-
-    if (message[0] == ':') {
-        message = message.substr(1);
+    
+    if (message.empty()) {
+        sendNumericReply(client, 412, ":No text to send"); // ERR_NOTEXTTOSEND
+        return;
     }
-
+    
+    if (message[0] == ':')
+        message = message.substr(1);
+    
     Client* targetClient = getClientByNick(target);
     if (targetClient) {
-        sendToClient(targetClient, ":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n");
+        std::string response = ":" + client->getPrefix() + " PRIVMSG " + target + " :" + message + "\r\n";
+        sendToClient(targetClient, response);
     } else {
         Channel* targetChannel = getChannelByName(target);
         if (targetChannel) {
-            targetChannel->broadcast(":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n", client);
+            if (!targetChannel->hasClient(client)) {
+                sendNumericReply(client, 404, target + " :Cannot send to channel"); // ERR_CANNOTSENDTOCHAN
+                return;
+            }
+            std::string response = ":" + client->getPrefix() + " PRIVMSG " + target + " :" + message + "\r\n";
+            broadcastToChannel(targetChannel, response, client);
         } else {
-            sendNumericReply(client, 401, target + " :No such nick/channel");
+            sendNumericReply(client, 401, target + " :No such nick/channel"); // ERR_NOSUCHNICK
         }
     }
 }
 
+
+bool Server::isValidNickname(const std::string& nickname) {
+    if (nickname.length() > 9)
+        return false;
+    for (size_t i = 0; i < nickname.length(); ++i) {
+        if (!std::isalnum(nickname[i]) && nickname[i] != '-' && nickname[i] != '_')
+            return false;
+    }
+    return true;
+}
+
 void Server::processCommand(Client* client, const std::string& command) {
-    // Example of how to split the command into parts
     std::istringstream iss(command);
     std::string cmd;
     iss >> cmd;
 
-    if (cmd == "JOIN") {
-        std::cout << "Commande JOIN detecter" << std::endl;
-        std::string params;
-        std::getline(iss, params);
-        cmdJoin(client, params);
-    } else if (cmd == "PART") {
-        std::string params;
-        std::getline(iss, params);
-        cmdPart(client, params);
-    } else if (cmd == "PRIVMSG") {
-        std::string params;
-        std::getline(iss, params);
-        cmdPrivmsg(client, params);
-    } else if (cmd == "KICK") {
-        std::cout << "KICK" << std::endl;
-        std::string params;
-        std::getline(iss, params);
-        cmdKick(client, params);
-    } else if (cmd == "INVITE") {
-        std::string params;
-        std::getline(iss, params);
-        cmdInvite(client, params);
-    } else if (cmd == "TOPIC") {
-        std::string params;
-        std::getline(iss, params);
-        cmdTopic(client, params);
-    } else if (cmd == "MODE") {
-        std::string channelName, mode;
-        iss >> channelName >> mode;
-        cmdMode(client, channelName, mode);
-    } else if (cmd == "OPER") {
-        std::string name, password;
-        iss >> name >> password;
-        cmdOper(client, name, password);
-    } else if (cmd == "KILL") {
-        std::string target;
-        iss >> target;
-        cmdKill(client, target);
+    // Convertir la commande en majuscules pour la comparaison
+    for (size_t i = 0; i < cmd.size(); ++i) {
+        cmd[i] = std::toupper(cmd[i]);
+    }
+
+    if (cmd == "PASS")
+    {
+        std::string password;
+        iss >> password;
+        client->setPassword(password);
+    } 
+    else if (cmd == "NICK")
+    {
+        std::string nickname;
+        iss >> nickname;
+        if (nickname.empty()) {
+            sendNumericReply(client, 431, ":No nickname given"); // ERR_NONICKNAMEGIVEN
+            return;
+        }
+        // Vérifier si le pseudo contient des caractères invalides
+        if (!isValidNickname(nickname)) {
+            sendNumericReply(client, 432, nickname + " :Erroneous nickname"); // ERR_ERRONEUSNICKNAME
+            return;
+        }
+        if (isNicknameInUse(nickname)) {
+            sendNumericReply(client, 433, nickname + " :Nickname is already in use"); // ERR_NICKNAMEINUSE
+            return;
+        }
+        client->setNickname(nickname);
+}
+
+    else if (cmd == "USER") {
+        std::string username, hostname, servername, realname;
+        iss >> username >> hostname >> servername;
+        std::getline(iss, realname);
+
+        if (username.empty() || hostname.empty() || servername.empty() || realname.empty()) {
+            sendNumericReply(client, 461, "USER :Not enough parameters"); // ERR_NEEDMOREPARAMS
+            return;
+        }
+
+        if (realname[0] == ':')
+            realname = realname.substr(1);
+
+        client->setUsername(username);
+        client->setRealname(realname);
+}
+
+
+    if (!client->isAuthenticated()) {
+        if (client->hasNickname() && client->hasUsername() && client->hasPassword()) {
+            if (client->isPasswordValid(_password)) {
+                client->authenticate();
+                sendNumericReply(client, 001, ":Welcome to the IRC server " + client->getNickname());
+            } else {
+                sendNumericReply(client, 464, ":Password incorrect");
+                removeClient(client->getFd());
+            }
+        } else {
+            // Attendre que le client envoie toutes les informations requises
+            return;
+        }
+    } else {
+        // Traiter les autres commandes une fois authentifié
+        if (cmd == "PING") {
+            std::string token;
+            iss >> token;
+            std::string response = "PONG " + token + "\r\n";
+            sendToClient(client, response);
+        } else if (cmd == "JOIN") {
+            std::string params;
+            std::getline(iss, params);
+            cmdJoin(client, params);
+        }
+        // ... [Autres commandes]
     }
 }
+
 
 Channel* Server::getChannelByName(const std::string& channelName) {
     std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
@@ -381,48 +442,88 @@ void Server::cmdKill(Client* client, const std::string& target) {
     removeClient(targetClient->getFd());
 }
 
+void Server::sendNamesReply(Client* client, Channel* channel) {
+    std::string nickList;
+    const std::set<Client*>& clients = channel->getClients();
+    for (std::set<Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
+        if (channel->isOperator(*it))
+            nickList += "@";
+        nickList += (*it)->getNickname() + " ";
+    }
+    sendNumericReply(client, 353, "= " + channel->getName() + " :" + nickList); // RPL_NAMREPLY
+    sendNumericReply(client, 366, channel->getName() + " :End of /NAMES list"); // RPL_ENDOFNAMES
+}
 
-// Implémentation des méthodes de commande manquantes
+void Server::broadcastToChannel(Channel* channel, const std::string& message, Client* sender) {
+    const std::set<Client*>& clients = channel->getClients();
+    for (std::set<Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
+        if (*it != sender) {
+            sendToClient(*it, message);
+        }
+    }
+}
 
 void Server::cmdJoin(Client* client, const std::string& params) {
     std::istringstream iss(params);
-    std::string channelName;
+    std::string channelName, key;
     iss >> channelName;
 
     if (channelName.empty()) {
-        sendNumericReply(client, 461, "JOIN :Not enough parameters");
+        sendNumericReply(client, 461, "JOIN :Not enough parameters"); // ERR_NEEDMOREPARAMS
         return;
     }
-    if (channelName[0] != '#') {
-        sendNumericReply(client, 476, channelName + " :Invalid channel name");
+    if (channelName[0] != '#' && channelName[0] != '&') {
+        sendNumericReply(client, 476, channelName + " :Invalid channel name"); // ERR_BADCHANMASK
         return;
     }
 
     Channel* channel;
     if (_channels.find(channelName) == _channels.end()) {
+        // Créer le canal
         channel = new Channel(channelName);
         _channels[channelName] = channel;
     } else {
         channel = _channels[channelName];
+        // Vérifier les conditions d'accès au canal
+        if (channel->isInviteOnly() && !channel->isInvited(client)) {
+            sendNumericReply(client, 473, channelName + " :Cannot join channel (+i)"); // ERR_INVITEONLYCHAN
+            return;
+        }
+        if (channel->hasUserLimit() && channel->getClientCount() >= channel->getUserLimit()) {
+            sendNumericReply(client, 471, channelName + " :Cannot join channel (+l)"); // ERR_CHANNELISFULL
+            return;
+        }
+        if (channel->hasKey()) {
+            iss >> key;
+            if (key != channel->getKey()) {
+                sendNumericReply(client, 475, channelName + " :Cannot join channel (+k)"); // ERR_BADCHANNELKEY
+                return;
+            }
+        }
     }
 
     if (channel->hasClient(client)) {
-        sendNumericReply(client, 443, channelName + " :You're already on that channel");
+        sendNumericReply(client, 443, client->getNickname() + " " + channelName + " :is already on channel"); // ERR_USERONCHANNEL
         return;
     }
 
     channel->addClient(client);
     std::string response = ":" + client->getNickname() + " JOIN " + channelName + "\r\n";
-    channel->broadcast(response, NULL);
     sendToClient(client, response);
+    broadcastToChannel(channel, response, client);
+
+
+    // Envoyer la liste des utilisateurs sur le canal
+    sendNamesReply(client, channel);
 
     // Envoyer le topic actuel
     if (!channel->getTopic().empty()) {
-        sendNumericReply(client, 332, channelName + " :" + channel->getTopic());
+        sendNumericReply(client, 332, channelName + " :" + channel->getTopic()); // RPL_TOPIC
     } else {
-        sendNumericReply(client, 331, channelName + " :No topic is set");
+        sendNumericReply(client, 331, channelName + " :No topic is set"); // RPL_NOTOPIC
     }
 }
+
 
 void Server::cmdPart(Client* client, const std::string& params) {
     std::istringstream iss(params);
@@ -446,8 +547,9 @@ void Server::cmdPart(Client* client, const std::string& params) {
 
     channel->removeClient(client);
     std::string response = ":" + client->getNickname() + " PART " + channelName + "\r\n";
-    channel->broadcast(response, NULL);
     sendToClient(client, response);
+    broadcastToChannel(channel, response, client);
+
 
     if (channel->isEmpty()) {
         delete channel;
@@ -483,8 +585,9 @@ void Server::cmdKick(Client* client, const std::string& params) {
 
     channel->removeClient(targetClient);
     std::string response = ":" + client->getNickname() + " KICK " + channelName + " " + targetNick + " :Kicked\r\n";
-    channel->broadcast(response, NULL);
+    broadcastToChannel(channel, response, targetClient);
     sendToClient(targetClient, response);
+
 
     // Vérifier si le canal est vide
     if (channel->isEmpty()) {
@@ -567,6 +670,6 @@ void Server::cmdTopic(Client* client, const std::string& params) {
             topic = topic.substr(1);
         channel->setTopic(topic);
         std::string response = ":" + client->getNickname() + " TOPIC " + channelName + " :" + topic + "\r\n";
-        channel->broadcast(response, NULL);
+        broadcastToChannel(channel, response, client);
     }
 }

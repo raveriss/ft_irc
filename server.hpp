@@ -18,6 +18,8 @@ public:
     ~Server();
 
     void run();
+    void broadcastToChannel(Channel* channel, const std::string& message, Client* sender);
+
 
 private:
     std::string _port;
@@ -47,6 +49,10 @@ private:
     void cmdKill(Client* client, const std::string& target);
 
     // Helper methods
+    bool isValidNickname(const std::string& nickname);
+    void sendNamesReply(Client* client, Channel* channel);
+
+
     bool isNicknameInUse(const std::string& nickname) const;
     Client* getClientByNick(const std::string& nickname);
     Channel* getChannelByName(const std::string& channelName);

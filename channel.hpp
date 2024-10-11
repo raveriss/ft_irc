@@ -13,23 +13,31 @@ public:
     Channel(const std::string& name);
     ~Channel();
 
+    // Accesseurs de base
     const std::string& getName() const;
+    const std::string& getTopic() const;
+    std::string getModes() const;
 
+    // Gestion des clients
     void addClient(Client* client);
     void removeClient(Client* client);
     bool hasClient(Client* client) const;
     bool isEmpty() const;
+    int getClientCount() const; // Ajout de cette méthode
+    const std::set<Client*>& getClients() const; // Ajout de cette méthode
 
-    void broadcast(const std::string& message, Client* sender);
+    // Diffusion de messages
+    // void broadcast(const std::string& message, Client* sender);
 
-    // Operators and modes
+    // Gestion des opérateurs
     bool isOperator(Client* client) const;
     void addOperator(Client* client);
     void removeOperator(Client* client);
 
+    // Gestion du topic
     void setTopic(const std::string& topic);
-    const std::string& getTopic() const;
 
+    // Modes et paramètres
     void setInviteOnly(bool value);
     bool isInviteOnly() const;
 
@@ -46,12 +54,12 @@ public:
     bool hasUserLimit() const;
     int getUserLimit() const;
 
+    // Gestion des invitations
     void addInvitedClient(Client* client);
     bool isInvited(Client* client) const;
 
+    // Recherche de client
     Client* getClientByNick(const std::string& nickname) const;
-
-    std::string getModes() const;
 
 private:
     std::string _name;
@@ -59,12 +67,13 @@ private:
     std::set<Client*> _operators;
     std::string _topic;
 
-    // Modes and settings
+    // Modes et paramètres
     bool _inviteOnly;
     bool _topicRestricted;
     std::string _key;
     int _userLimit;
     std::set<Client*> _invitedClients;
+    Server* _server;
 };
 
 #endif // CHANNEL_HPP

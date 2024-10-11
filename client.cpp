@@ -24,6 +24,10 @@ const std::string& Client::getUsername() const {
     return _username;
 }
 
+const std::string& Client::getRealname() const { // Implémentation de getRealname()
+    return _realname;
+}
+
 bool Client::isAuthenticated() const {
     return _authenticated;
 }
@@ -42,6 +46,10 @@ void Client::setNickname(const std::string& nickname) {
 
 void Client::setUsername(const std::string& username) {
     _username = username;
+}
+
+void Client::setRealname(const std::string& realname) { // Implémentation de setRealname()
+    _realname = realname;
 }
 
 void Client::setPassword(const std::string& password) {
@@ -80,6 +88,10 @@ bool Client::hasNickname() const {
 
 bool Client::hasUsername() const {
     return !_username.empty();
+}
+
+bool Client::hasRealname() const { // Implémentation de hasRealname()
+    return !_realname.empty();
 }
 
 bool Client::hasPassword() const {
