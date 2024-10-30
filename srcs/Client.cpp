@@ -21,7 +21,9 @@ const time_t INACTIVITY_TIMEOUT = 300;
  * Constructor
  */
 Client::Client(int socket)
-    : _socket(socket), _registered(false), _sentPass(false), _sentNick(false), _sentUser(false), _isAway(false), _isOperator(false)
+    : _socket(socket), _registered(false), _sentPass(false), _sentNick(false), 
+        _sentUser(false), _isAway(false), _isOperator(false), _lastPongTime(0),
+        _lastActivityTime(time(NULL)), pingReceived(false)
 {
     /* Initialiser le temps de la dernière activité */
     _lastActivityTime = time(NULL);
