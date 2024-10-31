@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:25:46 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/24 23:25:47 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:21:06 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,9 @@
 
 /* For std::find */
 #include <algorithm>
+
+/* For td::cout */
+#include <iostream>
 
 /* Déclaration anticipée de Client */
 class Client;

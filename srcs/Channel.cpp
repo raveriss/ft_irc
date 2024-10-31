@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:21:21 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/24 23:38:22 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:45:49 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,9 +56,21 @@ void Channel::addClient(Client *client)
  */
 void Channel::removeClient(Client *client)
 {
+    std::cout << "Tentative de suppression du client du canal..." << std::endl;
+
+    // Suppression du client de la liste des clients
     _clients.erase(std::remove(_clients.begin(), _clients.end(), client), _clients.end());
-    _operators.erase(client);
-    _invitedClients.erase(client);
+    std::cout << "Client supprimé du vecteur _clients" << std::endl;
+
+    // Suppression du client de la liste des opérateurs
+    if (_operators.erase(client) > 0) {
+        std::cout << "Client supprimé de _operators" << std::endl;
+    }
+
+    // Suppression du client de la liste des invités
+    if (_invitedClients.erase(client) > 0) {
+        std::cout << "Client supprimé de _invitedClients" << std::endl;
+    }
 }
 
 /**

@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:16:05 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/24 22:56:09 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:26:11 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,18 @@ DCCTransfer::DCCTransfer(Server* server, Client* sender, Client* receiver, const
  */
 DCCTransfer::~DCCTransfer()
 {
-    if (_listenSocket >= 0)
+    if (_listenSocket >= 0) {
         close(_listenSocket);
-    if (_senderSocket >= 0)
+        std::cout << "Socket d'écoute de DCCTransfer fermé." << std::endl;
+    }
+    if (_senderSocket >= 0) {
         close(_senderSocket);
-    if (_receiverSocket >= 0)
+        std::cout << "Socket d'envoi de DCCTransfer fermé." << std::endl;
+    }
+    if (_receiverSocket >= 0) {
         close(_receiverSocket);
+        std::cout << "Socket de réception de DCCTransfer fermé." << std::endl;
+    }
 }
 
 /**

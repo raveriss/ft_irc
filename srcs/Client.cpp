@@ -6,13 +6,14 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:06:36 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/29 00:26:12 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:18:21 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 /* Inclusions pour les clients et les canaux */
 #include "../incs/Client.hpp"
 #include "../incs/Channel.hpp"
+#include "../incs/DCCManager.hpp"
 
 /* Définit la durée d'inactivité maximale (par exemple 300 secondes) */
 const time_t INACTIVITY_TIMEOUT = 300;

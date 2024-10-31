@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/29 00:52:56 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:33:57 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,33 +44,42 @@ void Server::handleSignal(int signal)
  * Ferme le serveur proprement
  */
 void Server::shutdown() {
-    /* Libération des clients */
+    std::cout << "Appel de la méthode shutdown" << std::endl;
+
+    // Libération des clients
     for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         delete *it;
     }
     _clients.clear();
+    std::vector<Client*>().swap(_clients);  // Réinitialise la capacité du vecteur à 0
+    std::cout << "Tous les clients ont été supprimés." << std::endl;
 
     // Libération des canaux
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
         delete it->second;
     }
     _channels.clear();
+    std::cout << "Tous les canaux ont été supprimés." << std::endl;
 
     // Fermer le socket d'écoute
     if (_listenSocket >= 0) {
         close(_listenSocket);
         _listenSocket = -1;
     }
+    std::cout << "Socket d'écoute fermé." << std::endl;
 
-        // Libération du Bot
+    // Libération du Bot
     _bot.~Bot();
+    std::cout << "Bot libéré." << std::endl;
 
+    // Libération de DCCManager
     _dccManager.~DCCManager();
+    std::cout << "DCCManager libéré." << std::endl;
 
     // Libération des descripteurs de fichiers
     FD_ZERO(&_masterSet);
     _fdMax = 0;
-
+    std::cout << "Descripteurs de fichiers libérés." << std::endl;
 
     // Libération de l'instance statique
     instance = NULL;
@@ -81,7 +90,9 @@ void Server::shutdown() {
             close(fd);
         }
     }
+    std::cout << "Tous les descripteurs de fichiers fermés." << std::endl;
 }
+
 
 /**
  * Constructor
