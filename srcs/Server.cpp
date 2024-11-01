@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/31 20:03:54 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/01 01:03:03 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -368,7 +368,7 @@ void Server::handleNewConnection()
     }
 
     std::cout << "(socket " << newSocket 
-          << ", IP " << host << "). En attente des commandes PASS, NICK et USER pour enregistrer le client.\n"
+          << ", IP " << host << "). \nCmds PASS, NICK et USER pour enregistrer le client."
           << std::endl;
 }
 
@@ -412,7 +412,7 @@ void Server::handleClientMessage(Client *client)
     }
     else
     {
-        std::cout << "Message reçu du client " << client->getSocket() << ": " << buffer << std::endl;
+        std::cout << "Reçu du client " << client->getSocket() << ": " << buffer;
         buffer[bytesRead] = '\0';
         std::string& messageBuffer = client->getMessageBuffer();
         messageBuffer.append(buffer);
@@ -425,7 +425,6 @@ void Server::handleClientMessage(Client *client)
 
             if (message.find("PONG") == 0)
             {
-                std::cout << "\033[1;31m" << message << "\033[0m" << std::endl;                /* Marquer le client comme ayant répondu */
                 client->setPingStatus(true);
             }
             
@@ -1166,7 +1165,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 
     /* Mettre à jour le pseudonyme du client */
     client->setNickname(newNickname);
-    std::cout << "Client " << client->getSocket() << " changed nickname to " << newNickname << std::endl << std::endl;
+    std::cout << "Client " << client->getSocket() << " changed nickname to " << newNickname << std::endl;
 
     /* Si le client n'était pas encore enregistré, définir le drapeau SentNick */
     if (!client->isRegistered())

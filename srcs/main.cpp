@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
     // Tente de créer et démarrer le serveur IRC avec le port et le mot de passe fournis
     try {
-        std::cout << "Serveur IRC sur port " << port << " passe \"" << password << "\"." << std::endl;
+        std::cout << "IRC, port \"" << port << "\", pass \"" << password << "\"." << std::endl;
         Server server(static_cast<unsigned short>(port), password);
         serverInstance = &server;
         server.run();
