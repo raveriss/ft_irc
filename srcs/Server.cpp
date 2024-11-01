@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 22:13:42 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/02 00:01:16 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -359,7 +359,8 @@ void Server::handleNewConnection()
     /* Créer un nouvel objet Client */
     Client *newClient = new Client(newSocket);
     std::string defaultHost = "unknown";
-    newClient->setHostname(host[0] ? std::string(host) : defaultHost);
+    _serverIp = host;
+    newClient->setHostname(host ? host : "127.0.0.1");
 
     /* Initialiser l'activité du client */
     newClient->updateLastActivity();
@@ -376,7 +377,7 @@ void Server::handleNewConnection()
     }
 
     std::cout << "(socket " << newSocket 
-          << ", IP " << host << "). \nCmds PASS, NICK et USER pour enregistrer le client."
+          << ", IP " << host << "). \nCmds PASS, NICK et USER pour enregistrer le client.\n"
           << std::endl;
 }
 
@@ -420,7 +421,6 @@ void Server::handleClientMessage(Client *client)
     }
     else
     {
-        std::cout << "Reçu du client " << client->getSocket() << ": " << buffer;
         buffer[bytesRead] = '\0';
         std::string& messageBuffer = client->getMessageBuffer();
         messageBuffer.append(buffer);
@@ -1267,7 +1267,7 @@ void Server::sendMotd(Client *client)
     std::string username = client->getUsername();
 
     /* 001 RPL_WELCOME */
-    std::string welcome = ":" + _serverName + " 001 " + nick + " :Welcome to the Internet Relay Network " + client->getNickname() + "!" + client->getRealname() + "@" + client->getHostname() + "\r\n";
+    std::string welcome = ":" + _serverName + " 001 " + nick + " :Welcome to the Internet Relay Network " + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + "\r\n";
     send(client->getSocket(), welcome.c_str(), welcome.length(), 0);
 
     /* 002 RPL_YOURHOST */
@@ -1422,7 +1422,7 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
 
     /* Notifier les autres clients du canal */
     std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + channelName + "\r\n";
-    std::cout << "Message JOIN envoyé : " << joinMsg << std::endl;
+    std::cout << "Message JOIN envoyé " << joinMsg << std::endl;
     const std::vector<Client*> &channelClients = channel->getClients();
     for (size_t i = 0; i < channelClients.size(); ++i)
     {
@@ -1786,4 +1786,9 @@ void Server::checkPingResponses()
             --i;
         }
     }
+}
+
+std::string & Server::getServerIp()
+{
+    return _serverIp;
 }
