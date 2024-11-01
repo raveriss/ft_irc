@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 01:03:03 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/01 01:18:55 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,45 +46,47 @@ void Server::handleSignal(int signal)
 void Server::shutdown() {
     std::cout << "Appel de la méthode shutdown" << std::endl;
 
-    // Libération des clients
+    /* Libération des clients */
     for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         delete *it;
     }
     _clients.clear();
-    std::vector<Client*>().swap(_clients);  // Réinitialise la capacité du vecteur à 0
+
+    /* Réinitialise la capacité du vecteur à 0 */
+    std::vector<Client*>().swap(_clients);
     std::cout << "Tous les clients ont été supprimés." << std::endl;
 
-    // Libération des canaux
+    /* Libération des canaux */
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
         delete it->second;
     }
     _channels.clear();
     std::cout << "Tous les canaux ont été supprimés." << std::endl;
 
-    // Fermer le socket d'écoute
+    /* Fermer le socket d'écoute */
     if (_listenSocket >= 0) {
         close(_listenSocket);
         _listenSocket = -1;
     }
     std::cout << "Socket d'écoute fermé." << std::endl;
 
-    // Libération du Bot
+    /* Libération du Bot */
     _bot.~Bot();
     std::cout << "Bot libéré." << std::endl;
 
-    // Libération de DCCManager
+    /* Libération de DCCManager */
     _dccManager.~DCCManager();
     std::cout << "DCCManager libéré." << std::endl;
 
-    // Libération des descripteurs de fichiers
+    /* Libération des descripteurs de fichiers */
     FD_ZERO(&_masterSet);
     _fdMax = 0;
     std::cout << "Descripteurs de fichiers libérés." << std::endl;
 
-    // Libération de l'instance statique
+    /* Libération de l'instance statique */
     instance = NULL;
 
-    // Fermer tous les descripteurs de fichiers ouverts
+    /* Fermer tous les descripteurs de fichiers ouverts */
     for (int fd = 0; fd <= _fdMax; ++fd) {
         if (FD_ISSET(fd, &_masterSet)) {
             close(fd);
@@ -265,15 +267,21 @@ void Server::run()
         if (currentTime - lastPingTime >= PING_INTERVAL)
         {
             sendPing();
-            lastPingTime = currentTime; // Réinitialisez le temps du dernier PING
-            lastCheckPingTime = currentTime + PING_RESPONSE_DELAY; // Délai de 10 secondes avant la vérification
+
+            /*  Réinitialisez le temps du dernier PING */
+            lastPingTime = currentTime;
+
+            /*  /Délai de 10 secondes avant la vérification */
+            lastCheckPingTime = currentTime + PING_RESPONSE_DELAY;
         }
 
-        // Vérifiez les réponses des clients après le délai
+        /* Vérifiez les réponses des clients après le délai */
         if (currentTime >= lastCheckPingTime)
         {
             checkPingResponses();
-            lastCheckPingTime = currentTime + 60; // Prochaine vérification dans 60 secondes
+
+            /* Prochaine vérification dans 60 secondes */
+            lastCheckPingTime = currentTime + 60;
         }
         
         /* Appel de la fonction de nettoyage des clients inactifs */

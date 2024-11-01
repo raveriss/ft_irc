@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/29 00:50:41 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/01 01:22:55 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -185,7 +185,8 @@ class Server
         /*                                GESTION DU PING                           */
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
 
-        static const int PING_INTERVAL = 60;        // Intervalle entre chaque envoi de PING en secondes
+        /* Intervalle entre chaque envoi de PING en secondes */
+        static const int PING_INTERVAL = 60;
         static const int PING_RESPONSE_DELAY = 15;
 
         /* Envoie un message PING à tous les clients */
