@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 01:30:04 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/01 22:09:43 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include "Bot.hpp"
 #include "DCCManager.hpp"
 #include "DCCTransfer.hpp"
+#include "Client.hpp"
 
 /* For std::vector */
 #include <vector>

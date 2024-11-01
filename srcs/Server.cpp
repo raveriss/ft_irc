@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 01:18:55 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/01 22:13:42 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1267,7 +1267,7 @@ void Server::sendMotd(Client *client)
     std::string username = client->getUsername();
 
     /* 001 RPL_WELCOME */
-    std::string welcome = ":" + _serverName + " 001 " + nick + " :Welcome to the Internet Relay Network " + username + "!" + client->getUsername() + "@" + client->getHostname() + "\r\n";
+    std::string welcome = ":" + _serverName + " 001 " + nick + " :Welcome to the Internet Relay Network " + client->getNickname() + "!" + client->getRealname() + "@" + client->getHostname() + "\r\n";
     send(client->getSocket(), welcome.c_str(), welcome.length(), 0);
 
     /* 002 RPL_YOURHOST */
