@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:25:54 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/29 00:45:10 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/01 01:34:18 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ class Client
 
         /* Retourne le socket du client */
         int getSocket() const;
+
 
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
         /*                              ENREGISTREMENT                               */
