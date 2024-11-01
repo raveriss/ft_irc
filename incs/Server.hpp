@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 01:22:55 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/01 01:30:04 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,10 +39,10 @@
 /* For std::istringstream */
 #include <sstream>
 
-
+/* For SIGINT */
 #include <csignal>
 
-
+/* For exit() */
 #include <cstdlib>
 
 /* For UINT16_MAX */
@@ -180,6 +180,7 @@ class Server
 
         /* Ferme tous les clients et le socket d'écoute */
         void shutdown();
+
 
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
         /*                                GESTION DU PING                           */
