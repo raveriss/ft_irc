@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:21:21 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 01:22:24 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/02 00:56:09 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,6 @@ void Channel::addClient(Client *client)
  */
 void Channel::removeClient(Client *client)
 {
-    std::cout << "Tentative de suppression du client du canal..." << std::endl;
 
     /* Suppression du client de la liste des clients */
     _clients.erase(std::remove(_clients.begin(), _clients.end(), client), _clients.end());

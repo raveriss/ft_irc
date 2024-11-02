@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/02 00:01:16 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/02 00:58:14 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,6 @@ void Server::handleSignal(int signal)
         signalName = "Unknown";
 
     std::cout << "\nSignal " << signalName << " reçu, fermeture du serveur..." << std::endl;
-    std::cout << "Tu as bien fait de me fermer, je suis un serveur IRC, je ne sers à rien !" << std::endl;
     if (instance)
     {
         instance->shutdown();
@@ -44,7 +43,6 @@ void Server::handleSignal(int signal)
  * Ferme le serveur proprement
  */
 void Server::shutdown() {
-    std::cout << "Appel de la méthode shutdown" << std::endl;
 
     /* Libération des clients */
     for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
@@ -54,34 +52,28 @@ void Server::shutdown() {
 
     /* Réinitialise la capacité du vecteur à 0 */
     std::vector<Client*>().swap(_clients);
-    std::cout << "Tous les clients ont été supprimés." << std::endl;
 
     /* Libération des canaux */
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
         delete it->second;
     }
     _channels.clear();
-    std::cout << "Tous les canaux ont été supprimés." << std::endl;
 
     /* Fermer le socket d'écoute */
     if (_listenSocket >= 0) {
         close(_listenSocket);
         _listenSocket = -1;
     }
-    std::cout << "Socket d'écoute fermé." << std::endl;
 
     /* Libération du Bot */
     _bot.~Bot();
-    std::cout << "Bot libéré." << std::endl;
 
     /* Libération de DCCManager */
     _dccManager.~DCCManager();
-    std::cout << "DCCManager libéré." << std::endl;
 
     /* Libération des descripteurs de fichiers */
     FD_ZERO(&_masterSet);
     _fdMax = 0;
-    std::cout << "Descripteurs de fichiers libérés." << std::endl;
 
     /* Libération de l'instance statique */
     instance = NULL;
@@ -92,7 +84,6 @@ void Server::shutdown() {
             close(fd);
         }
     }
-    std::cout << "Tous les descripteurs de fichiers fermés." << std::endl;
 }
 
 
@@ -376,8 +367,8 @@ void Server::handleNewConnection()
         _fdMax = newSocket;
     }
 
-    std::cout << "(socket " << newSocket 
-          << ", IP " << host << "). \nCmds PASS, NICK et USER pour enregistrer le client.\n"
+    std::cout << "Client " << newSocket 
+          << ", IP " << host << ". \nCmds PASS, NICK et USER pour enregistrer le client.\n"
           << std::endl;
 }
 
@@ -1173,7 +1164,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 
     /* Mettre à jour le pseudonyme du client */
     client->setNickname(newNickname);
-    std::cout << "Client " << client->getSocket() << " changed nickname to " << newNickname << std::endl;
+    std::cout << "Client " << client->getSocket() << " changed nickname to " << newNickname << std::endl << std::endl;
 
     /* Si le client n'était pas encore enregistré, définir le drapeau SentNick */
     if (!client->isRegistered())
@@ -1421,7 +1412,7 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
     channel->removeInvitation(client);
 
     /* Notifier les autres clients du canal */
-    std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + channelName + "\r\n";
+    std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\r\n";
     std::cout << "Message JOIN envoyé " << joinMsg << std::endl;
     const std::vector<Client*> &channelClients = channel->getClients();
     for (size_t i = 0; i < channelClients.size(); ++i)
@@ -1477,7 +1468,7 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
     }
 
     /* Notifier les autres clients du canal */
-    std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " PART " + channelName + "\r\n";
+    std::string partMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + client->getHostname() + " PART " + channelName + "\r\n";
     std::cout << "Message PART envoyé : " << partMsg << std::endl;
     const std::vector<Client*> &channelClients = channel->getClients();
     for (size_t i = 0; i < channelClients.size(); ++i)
