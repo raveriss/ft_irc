@@ -50,8 +50,15 @@ void Server::shutdown() {
     }
     _clients.clear();
 
-    /* Réinitialise la capacité du vecteur à 0 */
+    /* Libération des clients dans _clientsToRemove */
+    for (std::vector<Client*>::iterator it = _clientsToRemove.begin(); it != _clientsToRemove.end(); ++it) {
+        delete *it;
+    }
+    _clientsToRemove.clear();
+
+    /* Réinitialise complètement la capacité des vecteurs */
     std::vector<Client*>().swap(_clients);
+    std::vector<Client*>().swap(_clientsToRemove);
 
     /* Libération des canaux */
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
@@ -314,6 +321,13 @@ void Server::run()
 
         /* Gérer les transferts DCC */
         _dccManager.processTransfers(readSet, writeSet);
+
+        /* Suppression différée des clients après la boucle principale */
+        for (std::vector<Client*>::iterator it = _clientsToRemove.begin(); it != _clientsToRemove.end(); ++it)
+        {
+            delete *it;
+        }
+        _clientsToRemove.clear();
     }
 }
 
@@ -1295,7 +1309,8 @@ void Server::removeClient(Client *client)
     close(client->getSocket());
     FD_CLR(client->getSocket(), &_masterSet);
     _clients.erase(std::remove(_clients.begin(), _clients.end(), client), _clients.end());
-    delete client;
+    _clientsToRemove.push_back(client); // Ajouter à la liste de suppression différée
+
 }
 
 /**

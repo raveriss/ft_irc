@@ -237,6 +237,8 @@ class Server
 
         /* Adresse IP du serveur */
         std::string _serverIp;
+
+        std::vector<Client*> _clientsToRemove;
 };
 
 #endif /* SERVER_HPP */
