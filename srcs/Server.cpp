@@ -351,7 +351,10 @@ void Server::handleNewConnection()
     Client *newClient = new Client(newSocket);
     std::string defaultHost = "unknown";
     _serverIp = host;
-    newClient->setHostname(host ? host : "127.0.0.1");
+    if (host[0] != '\0')
+        newClient->setHostname(host);
+    else
+        newClient->setHostname("127.0.0.1");
 
     /* Initialiser l'activité du client */
     newClient->updateLastActivity();
