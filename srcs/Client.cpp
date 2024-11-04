@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:06:36 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 22:24:40 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/04 21:30:16 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -286,28 +286,12 @@ void Client::setOperator(bool status) {
 }
 
 /**
- * @return true if the client is suspended, false otherwise
- */
-bool Client::isSuspended() const {
-    time_t currentTime = time(NULL);
-    return (currentTime - _lastActivityTime) > INACTIVITY_TIMEOUT;
-}
-
-/**
  * Update the time of the last activity
  */
 void Client::updateLastActivity() {
     
     /* Mettre à jour l'heure de la dernière activité */
     _lastActivityTime = time(NULL);
-}
-
-/**
- * Set the ping status of the client
- */
-void Client::setPingStatus(bool status)
-{
-    pingReceived = status;
 }
 
 /**

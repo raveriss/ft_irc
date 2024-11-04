@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:25:54 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 01:34:18 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/04 21:30:46 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,8 +90,6 @@ class Client
         /* Définit l'état opérateur du client */
         void setOperator(bool status);
 
-        bool isSuspended() const;
-
         /* Méthode pour mettre à jour l'heure de dernière activité */
         void updateLastActivity();
 
@@ -160,9 +158,6 @@ class Client
 
         /* Getter pour le tampon de messages partiels */
         std::string & getMessageBuffer();
-
-        /* Setter pour le PING status */
-        void setPingStatus(bool status);
 
         /* Indique si le client a reçu un PING */
         bool isPingReceived() const;

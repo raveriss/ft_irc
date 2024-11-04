@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/02 01:23:01 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/04 21:32:21 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -206,35 +206,10 @@ void Server::init()
 }
 
 /**
- * Supprime les clients inactifs de la liste
- */
-void Server::cleanupInactiveClients() {
-    for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ) {
-        Client* client = *it;
-
-        /* Méthode à implémenter pour vérifier la suspension */
-        if (client->isSuspended()) {
-            std::cout << "Déconnexion du client inactif : " << client->getNickname() << std::endl;
-            
-            // removeClient(client);
-            it = _clients.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
-/**
  * Run the server
  */
 void Server::run()
 {
-    /* Temps initial pour le déclenchement des PING */
-    time_t lastPingTime = time(NULL);
-
-    /* Nouveau délai pour la vérification */
-    time_t lastCheckPingTime = lastPingTime;
-
     
     /* Boucle principale du serveur, tourne indéfiniment */
     while (true)
@@ -260,30 +235,6 @@ void Server::run()
             throw std::runtime_error("Erreur lors de la sélection des descripteurs.");
         }
         
-        time_t currentTime = time(NULL);
-
-        if (currentTime - lastPingTime >= PING_INTERVAL)
-        {
-            sendPing();
-
-            /*  Réinitialisez le temps du dernier PING */
-            lastPingTime = currentTime;
-
-            /*  /Délai de 10 secondes avant la vérification */
-            lastCheckPingTime = currentTime + PING_RESPONSE_DELAY;
-        }
-
-        /* Vérifiez les réponses des clients après le délai */
-        if (currentTime >= lastCheckPingTime)
-        {
-            checkPingResponses();
-
-            /* Prochaine vérification dans 60 secondes */
-            lastCheckPingTime = currentTime + 60;
-        }
-        
-        /* Appel de la fonction de nettoyage des clients inactifs */
-        cleanupInactiveClients();
 
         /* Parcourt tous les descripteurs pour vérifier les événements */
         for (int fd = 0; fd <= _fdMax; ++fd)
@@ -438,14 +389,9 @@ void Server::handleClientMessage(Client *client)
         {
             std::string message = messageBuffer.substr(0, pos);
             messageBuffer.erase(0, pos + 1);
-
-            if (message.find("PONG") == 0)
-            {
-                client->setPingStatus(true);
-            }
             
             /* Supprimer le retour chariot s'il est présent */
-            else if (!message.empty() && message[message.size() - 1] == '\r')
+            if (!message.empty() && message[message.size() - 1] == '\r')
             {
                 message.erase(message.size() - 1);
             }
@@ -1753,40 +1699,6 @@ void Server::setFdMax(int fd) {
     }
 }
 
-void Server::sendPing()
-{
-    /* Message PING envoyé aux clients pour vérifier l'activité */
-    std::string pingMsg = "PING :" + _serverName + "\r\n";
-    
-    /* Envoie le PING à chaque client et marque comme "non-répondant" */
-    for (size_t i = 0; i < _clients.size(); ++i)
-    {
-        send(_clients[i]->getSocket(), pingMsg.c_str(), pingMsg.length(), 0);
-
-        /* Marquer le client comme "non-répondant" */
-        _clients[i]->setPingStatus(false);
-    }
-}
-
-void Server::checkPingResponses()
-{
-    /* Parcourt chaque client pour vérifier s'il a répondu au PING */
-    for (size_t i = 0; i < _clients.size(); ++i)
-    {
-        /* Vérifier si le client a répondu au PING */
-        if (!_clients[i]->isPingReceived())
-        {
-            /* Le client n'a pas répondu, le déconnecter */
-            std::cout << "Client inactif, déconnexion du socket : " << _clients[i]->getSocket() << std::endl;
-
-            /* Utiliser removeClient pour supprimer le client */
-            removeClient(_clients[i]);
-
-            /* Réajuster l'index après suppression */
-            --i;
-        }
-    }
-}
 
 std::string & Server::getServerIp()
 {

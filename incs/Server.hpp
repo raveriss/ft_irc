@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/01 22:54:11 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/04 21:19:24 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,10 @@
 
 /* For exit() */
 #include <cstdlib>
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <iostream>
 
 /* For UINT16_MAX */
 #define UINT16_MAX 65535
@@ -175,8 +179,7 @@ class Server
         /* Envoie la réponse NAMES à un client pour un canal donné */
         void sendNamesReply(Client *client, Channel *channel);
 
-        /* Supprime les clients inactifs de la liste */
-        void cleanupInactiveClients();
+
 
         /* Gestion des signaux */
         static void handleSignal(int signal);
@@ -197,7 +200,6 @@ class Server
         void sendPing();
 
         /* Vérifie les réponses aux PING */
-        void checkPingResponses();
 
     private:
 
