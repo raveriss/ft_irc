@@ -1764,17 +1764,8 @@ void Server::checkPingResponses()
             /* Le client n'a pas répondu, le déconnecter */
             std::cout << "Client inactif, déconnexion du socket : " << _clients[i]->getSocket() << std::endl;
 
-            /* Fermer le socket du client */
-            close(_clients[i]->getSocket());
-
-            /* Supprimer du set maître */
-            FD_CLR(_clients[i]->getSocket(), &_masterSet);
-
-            /* Libérer la mémoire allouée pour le client */
-            delete _clients[i];
-
-            /* Retirer de la liste des clients */
-            _clients.erase(_clients.begin() + i);
+            /* Utiliser removeClient pour supprimer le client */
+            removeClient(_clients[i]);
 
             /* Réajuster l'index après suppression */
             --i;
