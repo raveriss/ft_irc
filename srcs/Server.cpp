@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/04 21:32:21 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/05 23:28:02 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -282,19 +282,22 @@ void Server::run()
     }
 }
 
-std::string Server::getColorCode(int socket) {
-    int colorCode = 31 + (socket % 7); // Génère un code de couleur de 31 à 37
+std::string Server::getBackgroundColorCode(int socket) {
+    int colorCode = 41 + (socket % 7); // Génère un code de couleur de fond de 41 à 47
     std::stringstream color;
-    color << "\033[1;" << colorCode << "m";
+    color << "\033[1;97;" << colorCode << "m"; // 1 pour le gras, 97 pour le texte en blanc vif
     return color.str();
 }
 
 void Server::printClientInfo(int newSocket, const std::string& host) {
-    std::string colorCode = getColorCode(newSocket);
-    std::cout << "Client " << colorCode << newSocket << "\033[0m, IP " << host
-              << ". \nCmds PASS, NICK et USER pour enregistrer le client.\n"
+    std::string colorCode = getBackgroundColorCode(newSocket);
+    std::cout << colorCode
+              << "\nClient " << newSocket << ", IP " << host
+              << ". Cmds PASS, NICK et USER pour enregistrer le client."
+              << "\033[0m" // Reset des couleurs
               << std::endl;
 }
+
 
 /**
  * Process a command received from a client
@@ -349,9 +352,6 @@ void Server::handleNewConnection()
         _fdMax = newSocket;
     }
 
-    // std::cout << "Client \033[1;37;103m" << newSocket 
-    //       << "\033[0m, IP " << host << ". \nCmds PASS, NICK et USER pour enregistrer le client.\n"
-    //       << std::endl;
     printClientInfo(newSocket, host);
 
 }
@@ -888,7 +888,7 @@ bool Server::send_message(const std::string &message, int sender_fd)
     if (tmp.size() > 510)
         tmp = tmp.substr(0, 510) + "\r\n";
     send(sender_fd, tmp.c_str(), tmp.size(), 0);
-    std::cout << "message sent: " << tmp << std::endl;
+    std::cout << "\nmessage sent: " << tmp;
     return true;
 }
 
@@ -1125,7 +1125,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 
     /* Mettre à jour le pseudonyme du client */
     client->setNickname(newNickname);
-    std::cout << "Client \033[1;37;103m" << client->getSocket() << "\033[0m changed nickname to " << newNickname << std::endl << std::endl;
+    std::cout << "\nClient \033[1;37;103m" << client->getSocket() << "\033[0m changed nickname to " << newNickname << std::endl;
 
     /* Si le client n'était pas encore enregistré, définir le drapeau SentNick */
     if (!client->isRegistered())

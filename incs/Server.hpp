@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/04 21:19:24 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/05 23:28:30 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -206,7 +206,7 @@ class Server
         /* Envoie un message PING à tous les clients */
         bool send_message(const std::string &message, int sender_fd);
 
-        std::string getColorCode(int socket);
+        std::string getBackgroundColorCode(int socket);
 
         void printClientInfo(int newSocket, const std::string& host);
 
