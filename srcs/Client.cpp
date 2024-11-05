@@ -15,9 +15,6 @@
 #include "../incs/Channel.hpp"
 #include "../incs/DCCManager.hpp"
 
-/* Définit la durée d'inactivité maximale (par exemple 300 secondes) */
-const time_t INACTIVITY_TIMEOUT = 300;
-
 /**
  * Constructor
  */
@@ -299,6 +296,7 @@ void Client::updateLastActivity() {
  */
 bool Client::isPingReceived() const
 {
+    
     return pingReceived;
 }
 

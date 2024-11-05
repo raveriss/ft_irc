@@ -50,8 +50,15 @@
 #include <fcntl.h>
 #include <iostream>
 
+#include <iostream>
+#include <sstream>
+
 /* For UINT16_MAX */
 #define UINT16_MAX 65535
+
+#define PING(client_id, param) (client_id + " PING :" + param + "\r\n")
+#define PONG(client_id, param) (client_id + " PONG :" + param + "\r\n")
+
 
 /* Déclaration anticipée de Client */
 class Client;
@@ -158,8 +165,8 @@ class Server
         void handleTopicCommand(Client *client, const std::vector<std::string> &params);
         void handleKickCommand(Client *client, const std::vector<std::string> &params);
         void handleCapCommand(Client *client, const std::vector<std::string> &params);
-        void handlePongCommand(Client *client, const std::vector<std::string> &params);
-        void handlePingCommand(Client *client, const std::vector<std::string> &params);
+        bool handlePingPongCommand(Client *client, const std::string &args);
+
 
 
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
@@ -197,7 +204,13 @@ class Server
         static const int PING_RESPONSE_DELAY = 15;
 
         /* Envoie un message PING à tous les clients */
-        void sendPing();
+        bool send_message(const std::string &message, int sender_fd);
+
+        std::string getColorCode(int socket);
+
+        void printClientInfo(int newSocket, const std::string& host);
+
+
 
         /* Vérifie les réponses aux PING */
 
@@ -241,6 +254,8 @@ class Server
         std::string _serverIp;
 
         std::vector<Client*> _clientsToRemove;
+
+
 };
 
 #endif /* SERVER_HPP */

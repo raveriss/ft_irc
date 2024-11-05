@@ -205,12 +205,13 @@ void Server::init()
     }
 }
 
+
 /**
  * Run the server
  */
 void Server::run()
 {
-    
+
     /* Boucle principale du serveur, tourne indéfiniment */
     while (true)
     {
@@ -234,7 +235,6 @@ void Server::run()
         {
             throw std::runtime_error("Erreur lors de la sélection des descripteurs.");
         }
-        
 
         /* Parcourt tous les descripteurs pour vérifier les événements */
         for (int fd = 0; fd <= _fdMax; ++fd)
@@ -280,6 +280,20 @@ void Server::run()
         }
         _clientsToRemove.clear();
     }
+}
+
+std::string Server::getColorCode(int socket) {
+    int colorCode = 31 + (socket % 7); // Génère un code de couleur de 31 à 37
+    std::stringstream color;
+    color << "\033[1;" << colorCode << "m";
+    return color.str();
+}
+
+void Server::printClientInfo(int newSocket, const std::string& host) {
+    std::string colorCode = getColorCode(newSocket);
+    std::cout << "Client " << colorCode << newSocket << "\033[0m, IP " << host
+              << ". \nCmds PASS, NICK et USER pour enregistrer le client.\n"
+              << std::endl;
 }
 
 /**
@@ -335,9 +349,11 @@ void Server::handleNewConnection()
         _fdMax = newSocket;
     }
 
-    std::cout << "Client " << newSocket 
-          << ", IP " << host << ". \nCmds PASS, NICK et USER pour enregistrer le client.\n"
-          << std::endl;
+    // std::cout << "Client \033[1;37;103m" << newSocket 
+    //       << "\033[0m, IP " << host << ". \nCmds PASS, NICK et USER pour enregistrer le client.\n"
+    //       << std::endl;
+    printClientInfo(newSocket, host);
+
 }
 
 /**
@@ -866,59 +882,41 @@ void Server::handleCapCommand(Client *client, const std::vector<std::string> &pa
     }
 }
 
-/**
- * Process a PONG command received from a client
- */
-void Server::handlePongCommand(Client *client, const std::vector<std::string> &params)
+bool Server::send_message(const std::string &message, int sender_fd)
 {
-    if (params.size() < 2)
-    {
-        /* Le paramètre <server> est manquant  */
-        std::string error = ":" + _serverName + " 409 " + client->getNickname() + " :No origin specified\r\n";
-        send(client->getSocket(), error.c_str(), error.length(), 0);
-        return;
-    }
-
-    /* Mettre à jour le temps du dernier PONG reçu */
-    client->setLastPongTime(time(NULL));
-
-    /* Optionnel : Vous pouvez également gérer le cas où <server2> est spécifié */
-    if (params.size() >= 3)
-    {
-        std::string targetServer = params[2];
-        /* Si vous avez une implémentation multi-serveur, vous devez retransmettre le PONG à targetServer */
-        /* Dans le cas d'un micro serveur, vous pouvez ignorer ou loguer cette information */
-    }
-
-    /* Aucun autre traitement n'est nécessaire pour un PONG standard */
+    std::string tmp = message;
+    if (tmp.size() > 510)
+        tmp = tmp.substr(0, 510) + "\r\n";
+    send(sender_fd, tmp.c_str(), tmp.size(), 0);
+    std::cout << "message sent: " << tmp << std::endl;
+    return true;
 }
 
 /**
- * Process a PING command received from a client
+ * Process a PONG command received from a client
  */
-void Server::handlePingCommand(Client *client, const std::vector<std::string> &params)
+bool Server::handlePingPongCommand(Client *client, const std::string &args)
 {
-    if (params.size() < 2)
+    std::string client_id = client->getNickname() + "!" + client->getUsername() + "@" + _serverIp;
+    std::string response;
+
+    if (!client->isRegistered())
     {
-        /* Le paramètre <server1> est manquant */
-        std::string error = ":" + _serverName + " 409 " + client->getNickname() + " :No origin specified\r\n";
-        send(client->getSocket(), error.c_str(), error.length(), 0);
-        return;
+        if (args.empty())
+            response = PING(client_id, "");
+        else
+            response = PING(client_id, args);
+    }
+    else
+    {
+        if (args.empty())
+            response = PONG(client_id, "");
+        else
+            response = PONG(client_id, args);
     }
 
-    /* Extraire le token à partir de params[1] */
-    std::string token = params[1];
-    if (!token.empty() && token[0] == ':')
-    {
-        /* Supprimer le ':' initial si présent */
-        token = token.substr(1);
-    }
-
-    /* Construire la réponse PONG conformément au protocole */
-    std::string response = ":" + _serverName + " PONG " + _serverName + " :" + token + "\r\n";
-
-    /* Envoyer la réponse au client */
-    send(client->getSocket(), response.c_str(), response.length(), 0);
+    send_message(response, client->getSocket());
+    return true;
 }
 
 /**
@@ -968,10 +966,10 @@ void Server::processCommand(Client *client, const std::string &message)
         handleUserCommand(client, tokens);
     } else if (command == "PING")
     {
-        handlePingCommand(client, tokens);
+        handlePingPongCommand(client, tokens.size() > 1 ? tokens[1] : "");
     } else if (command == "PONG")
     {
-        handlePongCommand(client, tokens);
+        handlePingPongCommand(client, tokens.size() > 1 ? tokens[1] : "");
     } else if (!client->isRegistered())
     {
         /* Le client doit être enregistré avant de pouvoir utiliser d'autres commandes */
@@ -1127,7 +1125,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 
     /* Mettre à jour le pseudonyme du client */
     client->setNickname(newNickname);
-    std::cout << "Client " << client->getSocket() << " changed nickname to " << newNickname << std::endl << std::endl;
+    std::cout << "Client \033[1;37;103m" << client->getSocket() << "\033[0m changed nickname to " << newNickname << std::endl << std::endl;
 
     /* Si le client n'était pas encore enregistré, définir le drapeau SentNick */
     if (!client->isRegistered())
