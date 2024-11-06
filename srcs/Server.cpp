@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/05 23:28:02 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/06 20:39:39 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -294,9 +294,9 @@ void Server::printClientInfo(int newSocket, const std::string& host) {
     std::cout << colorCode
               << "\nClient " << newSocket << ", IP " << host
               << ". Cmds PASS, NICK et USER pour enregistrer le client."
-              << "\033[0m" // Reset des couleurs
-              << std::endl;
+              << "\033[0m\033[K" << std::endl;
 }
+
 
 
 /**
@@ -1113,7 +1113,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
     /* Si le client est déjà enregistré, notifier les autres clients du changement de pseudonyme */
     if (client->isRegistered())
     {
-        std::string nickChangeMsg = ":" + client->getNickname() + " NICK :" + newNickname + ".\033[0m" + "\r\n";
+        std::string nickChangeMsg = ":" + client->getNickname() + " NICK :" + newNickname + "." + "\033[0m\r\n";
         for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
         {
             if (*it != client && (*it)->isRegistered())
@@ -1125,8 +1125,11 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 
     /* Mettre à jour le pseudonyme du client */
     client->setNickname(newNickname);
-    std::cout << getBackgroundColorCode(client->getSocket()) << "\nClient " << client->getSocket() << " changed nickname to " << newNickname << ".\n\033[0m";
-
+    std::cout << getBackgroundColorCode(client->getSocket()) 
+            << "\nClient " << client->getSocket() 
+            << " changed nickname to " << newNickname 
+            << "\033[0m\033[K" << std::endl;
+            
     /* Si le client n'était pas encore enregistré, définir le drapeau SentNick */
     if (!client->isRegistered())
     {
@@ -1375,7 +1378,7 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
 
     /* Notifier les autres clients du canal */
     std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\033[0m" + "\r\n";
-    std::cout << "\nMessage JOIN envoyé " << getBackgroundColorCode(client->getSocket()) << joinMsg << "\033[0m";
+    std::cout << "\nCmd Join send by " << getBackgroundColorCode(client->getSocket()) << joinMsg << "\033[0m";
     const std::vector<Client*> &channelClients = channel->getClients();
     for (size_t i = 0; i < channelClients.size(); ++i)
     {
@@ -1430,8 +1433,8 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
     }
 
     /* Notifier les autres clients du canal */
-    std::string partMsg = "\033[0m:" + client->getNickname() + "!" + client->getRealname() + "@" + client->getHostname() + " PART " + channelName + "\033[0m" + "\r\n";
-    std::cout << "\033[0m\nMessage PART envoyé " << getBackgroundColorCode(client->getSocket()) << partMsg << "\033[0m";
+    std::string partMsg =  getBackgroundColorCode(client->getSocket()) + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " PART " + channelName + "\033[0m" + "\r\n";
+    std::cout << "\033[0m\nCmd PART send by " << getBackgroundColorCode(client->getSocket()) << ":" << partMsg << "\033[0m";
     const std::vector<Client*> &channelClients = channel->getClients();
     for (size_t i = 0; i < channelClients.size(); ++i)
     {
