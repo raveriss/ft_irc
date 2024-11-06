@@ -886,9 +886,9 @@ bool Server::send_message(const std::string &message, int sender_fd)
 {
     std::string tmp = message;
     if (tmp.size() > 510)
-        tmp = tmp.substr(0, 510) + "\033[0m\r\n";
+        tmp = tmp.substr(0, 510) + "\r\n";
     send(sender_fd, tmp.c_str(), tmp.size(), 0);
-    std::cout << "\n\033[1;30;43mMessage sent: " << tmp << "\033[0;0;0m";
+    std::cout << "\n\033[43mMessage sent: " << tmp << "\033[0m";
     return true;
 }
 
@@ -897,7 +897,7 @@ bool Server::send_message(const std::string &message, int sender_fd)
  */
 bool Server::handlePingPongCommand(Client *client, const std::string &args)
 {
-    std::string client_id = client->getNickname() + "!" + client->getUsername() + "@" + _serverIp;
+    std::string client_id = "\033[43m" + client->getNickname() + "!" + client->getUsername() + "@" + _serverIp + "\033[0m";
     std::string response;
 
     if (!client->isRegistered())
@@ -916,7 +916,6 @@ bool Server::handlePingPongCommand(Client *client, const std::string &args)
     }
 
     send_message(response, client->getSocket());
-    std::cout << "\033[0m";
     return true;
 }
 
@@ -1114,7 +1113,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
     /* Si le client est déjà enregistré, notifier les autres clients du changement de pseudonyme */
     if (client->isRegistered())
     {
-        std::string nickChangeMsg = ":" + client->getNickname() + " NICK :" + newNickname + "\r\n";
+        std::string nickChangeMsg = ":" + client->getNickname() + " NICK :" + newNickname + ".\033[0m" + "\r\n";
         for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
         {
             if (*it != client && (*it)->isRegistered())
@@ -1126,7 +1125,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 
     /* Mettre à jour le pseudonyme du client */
     client->setNickname(newNickname);
-    std::cout << getBackgroundColorCode(client->getSocket()) << "\nClient " << client->getSocket() << " changed nickname to " << newNickname << ".\033[0m" << std::endl;
+    std::cout << getBackgroundColorCode(client->getSocket()) << "\nClient " << client->getSocket() << " changed nickname to " << newNickname << ".\n\033[0m";
 
     /* Si le client n'était pas encore enregistré, définir le drapeau SentNick */
     if (!client->isRegistered())

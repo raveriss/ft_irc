@@ -56,8 +56,8 @@
 /* For UINT16_MAX */
 #define UINT16_MAX 65535
 
-#define PING(client_id, param) (client_id + " PING :" + param + "\r\n")
-#define PONG(client_id, param) (client_id + " PONG :" + param + "\r\n")
+#define PING(client_id, param) (client_id + "\033[43m PING :" + param + "\033[0m\r\n")
+#define PONG(client_id, param) (client_id + "\033[43m PONG :" + param + "\033[0m\r\n")
 
 
 /* Déclaration anticipée de Client */
