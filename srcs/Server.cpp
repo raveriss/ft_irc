@@ -386,7 +386,7 @@ void Server::handleClientMessage(Client *client)
     {
         if (bytesRead == 0)
         {
-            std::cout << "Le client " << client->getSocket() << " a fermé la connexion." << std::endl;
+            std::cout << "Le client " << client->getSocket() << " a fermé la connexion.\033[0m" << std::endl;
         }
         else
         {
@@ -886,9 +886,9 @@ bool Server::send_message(const std::string &message, int sender_fd)
 {
     std::string tmp = message;
     if (tmp.size() > 510)
-        tmp = tmp.substr(0, 510) + "\r\n";
+        tmp = tmp.substr(0, 510) + "\033[0m\r\n";
     send(sender_fd, tmp.c_str(), tmp.size(), 0);
-    std::cout << "\nmessage sent: " << tmp;
+    std::cout << "\n\033[1;30;43mMessage sent: " << tmp << "\033[0;0;0m";
     return true;
 }
 
@@ -916,6 +916,7 @@ bool Server::handlePingPongCommand(Client *client, const std::string &args)
     }
 
     send_message(response, client->getSocket());
+    std::cout << "\033[0m";
     return true;
 }
 
@@ -1125,7 +1126,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 
     /* Mettre à jour le pseudonyme du client */
     client->setNickname(newNickname);
-    std::cout << "\nClient \033[1;37;103m" << client->getSocket() << "\033[0m changed nickname to " << newNickname << std::endl;
+    std::cout << getBackgroundColorCode(client->getSocket()) << "\nClient " << client->getSocket() << " changed nickname to " << newNickname << ".\033[0m" << std::endl;
 
     /* Si le client n'était pas encore enregistré, définir le drapeau SentNick */
     if (!client->isRegistered())
@@ -1374,8 +1375,8 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
     channel->removeInvitation(client);
 
     /* Notifier les autres clients du canal */
-    std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\r\n";
-    std::cout << "Message JOIN envoyé " << joinMsg << std::endl;
+    std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\033[0m" + "\r\n";
+    std::cout << "\nMessage JOIN envoyé " << getBackgroundColorCode(client->getSocket()) << joinMsg << "\033[0m";
     const std::vector<Client*> &channelClients = channel->getClients();
     for (size_t i = 0; i < channelClients.size(); ++i)
     {
@@ -1430,8 +1431,8 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
     }
 
     /* Notifier les autres clients du canal */
-    std::string partMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + client->getHostname() + " PART " + channelName + "\r\n";
-    std::cout << "Message PART envoyé : " << partMsg << std::endl;
+    std::string partMsg = "\033[0m:" + client->getNickname() + "!" + client->getRealname() + "@" + client->getHostname() + " PART " + channelName + "\033[0m" + "\r\n";
+    std::cout << "\033[0m\nMessage PART envoyé " << getBackgroundColorCode(client->getSocket()) << partMsg << "\033[0m";
     const std::vector<Client*> &channelClients = channel->getClients();
     for (size_t i = 0; i < channelClients.size(); ++i)
     {

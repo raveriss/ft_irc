@@ -59,16 +59,15 @@ void Channel::removeClient(Client *client)
 
     /* Suppression du client de la liste des clients */
     _clients.erase(std::remove(_clients.begin(), _clients.end(), client), _clients.end());
-    std::cout << "Client supprimé du vecteur _clients" << std::endl;
 
     /* Suppression du client de la liste des opérateurs */
     if (_operators.erase(client) > 0) {
-        std::cout << "Client supprimé de _operators" << std::endl;
+        std::cout << "\033[0mClient supprimé de _operators" << std::endl;
     }
 
     /* Suppression du client de la liste des invités */
     if (_invitedClients.erase(client) > 0) {
-        std::cout << "Client supprimé de _invitedClients" << std::endl;
+        std::cout << "\033[0mClient supprimé de _invitedClients" << std::endl;
     }
 }
 

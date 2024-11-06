@@ -62,7 +62,34 @@ int main(int argc, char **argv) {
 
     /* Tente de créer et démarrer le serveur IRC avec le port et le mot de passe fournis */
     try {
-        std::cout << "\033[1;90m\nIRC, port \"" << port << "\", pass \"" << password << "\".\n\033[0m";
+        std::cout << "\033[1;35m"; // Set text color to bright magenta
+        std::cout << "====================================================================================\n";
+        std::cout << "\033[1;36m"; // Set text color to bright cyan 
+        std::cout << "\n";                                                                           
+        std::cout << "                    :-:::-=-::::::           .::::   .=*%@@@@#+            ..          \n";
+        std::cout << "     +%*==++**#%*+: :%@@@@@@@%%%%#*          +@@%*: *@@@@@@@@@@@:       -*%#%#.        \n";
+        std::cout << "     +@@@@*+==-:.    =*%@@@@@@#+==-           @@@@=.*@@@@@@*::=%@.     *@@*##@@-       \n";
+        std::cout << "     .@@@*              .@@@*   .            =@@@*  .%++@@@-  -%@#    *@@*%**#@%       \n";
+        std::cout << "     .@@%*  :-=*+-      :@@@+                *%@@-     ##@@==%@@@@   =@@%@. :%%*       \n";
+        std::cout << "     .@@@@@@@@%*=-      =@@@=                +#@@.     @@@@@@@%##:   #@@%*   .-        \n";
+        std::cout << "      @@@*+:.           -@@@-                +%@%      @@@@@@*-.     %@@@:             \n";
+        std::cout << "      *@@+-             *=@@:                =@@%.    .%@@@+@%=.      +@@%---=*%#-     \n";
+        std::cout << "      =%@*.             *.##.    -+++=+++*+.:#@@@@=    *@@@  =#@@@+     :=**%@@%*-     \n";
+        std::cout << "      .-:.              : #*.    :::::--==-   =%%=     .#@@     :==.                   \n";
+        std::cout << "                           :                             :=.                        \n";
+        std::cout << "\n";
+        std::cout << "\033[1;35m"; // Change text color to bright magenta
+        std::cout << "====================================================================================\n";
+        std::cout << "\033[1;32m"; // Set text color to bright green
+        std::cout << "🚀 Server started successfully!\n";
+        std::cout << "\033[1;35m"; // Magenta color for separators
+        std::cout << "------------------------------------------------------------------------------------\n";
+        std::cout << "\033[1;33m"; // Set text color to bright yellow
+        std::cout << "🔌 Port     : \033[1;37m" << port << "\n";      // White color for values
+        std::cout << "\033[1;33m" << "🔑 Password : \033[1;37m" << password << "\n";
+        std::cout << "\033[1;35m"; // Magenta color for separators
+        std::cout << "====================================================================================\n";
+        std::cout << "\033[0m"; // Reset text color
         Server server(static_cast<unsigned short>(port), password);
         serverInstance = &server;
         server.run();
