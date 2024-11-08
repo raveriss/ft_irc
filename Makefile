@@ -5,7 +5,7 @@ INC_DIR := incs
 
 # Variables de compilation
 CXX := c++
-CXXFLAGS := -Wall -Wextra -Werror -g -std=c++98 -I$(INC_DIR) -I./srcs/cmds
+CXXFLAGS := -Wall -Wextra -Werror -g3 -std=c++98 -I$(INC_DIR) -I./srcs/cmds
 
 # Fichiers sources et objets
 SRCS := $(shell find $(SRC_DIR) -type f -name '*.cpp')

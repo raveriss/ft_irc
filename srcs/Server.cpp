@@ -201,6 +201,7 @@ void Server::init()
         else
         {
             _serverIp = inet_ntoa(*(struct in_addr*)host->h_addr_list[0]);
+            std::cout << "Serveur IRC démarré sur " << _serverIp << ":" << _port << std::endl;
         }
     }
 }
@@ -1458,18 +1459,20 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
  */
 void Server::handleDCCSendCommand(Client *client, const std::vector<std::string> &ctcpParams, const std::string &targetNick)
 {
-    /* Commande DCC SEND invalide */
+    // Vérifier la validité de la commande
     if (ctcpParams.size() < 5)
     {
         return;
     }
 
     std::string filename = ctcpParams[2];
+    uint32_t ip_addr_int = static_cast<uint32_t>(atoi(ctcpParams[3].c_str()));
+    uint16_t port = static_cast<uint16_t>(atoi(ctcpParams[4].c_str()));
     uint32_t filesize = 0;
     if (ctcpParams.size() >= 6)
         filesize = static_cast<uint32_t>(atoi(ctcpParams[5].c_str()));
 
-    /* Trouver le destinataire */
+    // Trouver le destinataire
     Client *receiver = getClientByNickname(targetNick);
     if (!receiver)
     {
@@ -1478,32 +1481,16 @@ void Server::handleDCCSendCommand(Client *client, const std::vector<std::string>
         return;
     }
 
-    /* Créer le transfert DCC */
-    DCCTransfer *transfer = new DCCTransfer(this, client, receiver, filename, filesize);
-    if (!transfer->start())
-    {
-        delete transfer;
-        /* Échec du démarrage du transfert */
-        return;
-    }
-
-    /* Ajouter le transfert au gestionnaire */
-    _dccManager.addTransfer(transfer);
-
-    /* Informer le destinataire */
-    std::string serverIp = _serverIp;
-    uint16_t serverPort = transfer->getListenPort();
-
+    // Relayer le message DCC SEND au destinataire
     std::ostringstream oss;
     oss << "\x01"
-        << "DCC SEND " << filename << " " << serverIp << " " << serverPort << " " << filesize << "\x01";
+        << "DCC SEND " << filename << " " << ip_addr_int << " " << port << " " << filesize << "\x01";
     std::string dccSendMsg = ":" + client->getNickname() + " PRIVMSG " + receiver->getNickname() + " :" + oss.str() + "\r\n";
 
-    /* Pour vérification, afficher le message DCC SEND */
-    std::cout << "DCC SEND message sent to receiver: " << dccSendMsg << std::endl;
-
+    // Envoyer le message au destinataire
     send(receiver->getSocket(), dccSendMsg.c_str(), dccSendMsg.length(), 0);
 }
+
 
 /**
  * Implement handleDCCAcceptCommand if needed

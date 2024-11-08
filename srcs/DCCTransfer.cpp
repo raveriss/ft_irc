@@ -128,7 +128,7 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
             int newSocket = accept(_listenSocket, NULL, NULL);
             if (newSocket >= 0)
             {
-                /* Mettre le socket en mode non-bloquant */
+                // Mettre le socket en mode non-bloquant
                 if (fcntl(newSocket, F_SETFL, O_NONBLOCK) < 0)
                 {
                     perror("fcntl");
@@ -137,7 +137,7 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
                     return;
                 }
 
-                /* Identifier le client (expéditeur ou destinataire) */
+                // Identifier le client (expéditeur ou destinataire)
                 if (_senderSocket < 0 && newSocket == _sender->getSocket())
                 {
                     _senderSocket = newSocket;
@@ -148,7 +148,6 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
                 }
                 else
                 {
-                    /* Pour simplifier, on suppose que le premier qui se connecte est l'expéditeur, le second le destinataire */
                     if (_senderSocket < 0)
                     {
                         _senderSocket = newSocket;
@@ -159,13 +158,12 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
                     }
                     else
                     {
-                        /* Trop de connexions, fermer le socket */
                         close(newSocket);
                         return;
                     }
                 }
 
-                /* Ajouter le socket au set maître du serveur */
+                // Ajouter le socket au set maître du serveur
                 FD_SET(newSocket, &_server->getMasterSet());
                 if (newSocket > _server->getFdMax())
                 {
@@ -188,15 +186,15 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
             if (bytesRead > 0)
             {
                 _buffer.insert(_buffer.end(), buffer, buffer + bytesRead);
+                std::cout << "Données lues depuis l'expéditeur : " << bytesRead << " octets" << std::endl;
             }
             else if (bytesRead == 0)
             {
-                /* L'expéditeur a fermé la connexion */
+                // L'expéditeur a fermé la connexion
                 _state = COMPLETED;
             }
             else if (bytesRead < 0 && errno != EWOULDBLOCK)
             {
-                /* Erreur lors de la réception */
                 perror("recv");
                 _state = ERROR;
             }
@@ -209,16 +207,16 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
             {
                 _buffer.erase(_buffer.begin(), _buffer.begin() + bytesSent);
                 _bytesTransferred += bytesSent;
+                std::cout << "Données envoyées au récepteur : " << bytesSent << " octets, Total transféré : " << _bytesTransferred << " / " << _filesize << std::endl;
             }
             else if (bytesSent < 0 && errno != EWOULDBLOCK)
             {
-                /* Erreur lors de l'envoi */
                 perror("send");
                 _state = ERROR;
             }
         }
 
-        /* Vérifier si le transfert est complet */
+        // Vérifier si le transfert est complet
         if (_bytesTransferred >= _filesize)
         {
             _state = COMPLETED;
@@ -227,14 +225,13 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
 
     if (_state == COMPLETED)
     {
-        /* Envoyer le message de confirmation aux clients */
         std::string completeMsg = ":" + _server->getServerName() + " NOTICE " + _sender->getNickname() + " :Transfert terminé\r\n";
         send(_sender->getSocket(), completeMsg.c_str(), completeMsg.length(), 0);
 
         completeMsg = ":" + _server->getServerName() + " NOTICE " + _receiver->getNickname() + " :Transfert terminé\r\n";
         send(_receiver->getSocket(), completeMsg.c_str(), completeMsg.length(), 0);
 
-        /* Fermer les sockets et nettoyer */
+        // Fermer les sockets et nettoyer
         close(_listenSocket);
         close(_senderSocket);
         close(_receiverSocket);
@@ -244,19 +241,18 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
 
         _state = FINISHED;
 
-        /* Retirer le transfert du gestionnaire */
+        // Retirer le transfert du gestionnaire
         _server->getDCCManager().removeTransfer(this);
     }
     else if (_state == ERROR)
     {
-        /* Gérer les erreurs */
         std::string errorMsg = ":" + _server->getServerName() + " NOTICE " + _sender->getNickname() + " :Erreur lors du transfert DCC\r\n";
         send(_sender->getSocket(), errorMsg.c_str(), errorMsg.length(), 0);
 
         errorMsg = ":" + _server->getServerName() + " NOTICE " + _receiver->getNickname() + " :Erreur lors du transfert DCC\r\n";
         send(_receiver->getSocket(), errorMsg.c_str(), errorMsg.length(), 0);
 
-        /* Fermer les sockets et nettoyer */
+        // Fermer les sockets et nettoyer
         close(_listenSocket);
         close(_senderSocket);
         close(_receiverSocket);
@@ -266,10 +262,11 @@ void DCCTransfer::process(fd_set& readSet, fd_set& writeSet)
 
         _state = FINISHED;
 
-        /* Retirer le transfert du gestionnaire */
+        // Retirer le transfert du gestionnaire
         _server->getDCCManager().removeTransfer(this);
     }
 }
+
 
 /**
  * Vérifie si le transfert est complet
