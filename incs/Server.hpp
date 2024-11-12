@@ -15,8 +15,6 @@
 
 /* Inclusions pour les clients, les canaux et le bot */
 #include "Bot.hpp"
-#include "DCCManager.hpp"
-#include "DCCTransfer.hpp"
 #include "Client.hpp"
 
 /* For std::vector */
@@ -47,14 +45,30 @@
 #include <cstdlib>
 
 #include <unistd.h>
+
 #include <fcntl.h>
-#include <iostream>
 
 #include <iostream>
-#include <sstream>
+
+
+/* Pour utiliser errno */
+#include <cerrno>
+
+/* Pour utiliser strerror */
+#include <cstring>
 
 /* For UINT16_MAX */
 #define UINT16_MAX 65535
+
+#define IPV4 AF_INET
+#define TCP SOCK_STREAM
+#define DEFLT_PROT 0
+
+#define GLOB_SOCK_OPT SOL_SOCKET         // Niveau d'option du socket
+#define REUSE_ADDR SO_REUSEADDR     // Option pour réutiliser l'adresse
+#define OPT_ON 1                    // Activer l'option
+#define ALL_ADDR INADDR_ANY
+
 
 #define PING(client_id, param) (client_id + "\033[43m PING :" + param + "\033[0m\r\n")
 #define PONG(client_id, param) (client_id + "\033[43m PONG :" + param + "\033[0m\r\n")
@@ -99,8 +113,7 @@ class Server
         /* Retourne le nom du serveur */
         const std::string& getServerName() const;
 
-        /* Retourne le gestionnaire DCC */
-        DCCManager& getDCCManager();
+
 
         /* Définit la valeur maximale de fd */
         void setFdMax(int fd);
@@ -169,14 +182,7 @@ class Server
 
 
 
-        /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
-        /*                                    DCC                                    */
-        /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
 
-        /* Commandes spécifiques au DCC */
-        void handleDCCCommand(Client *client, const std::vector<std::string> &ctcpParams, const std::string &target);
-        void handleDCCAcceptCommand(Client *client, const std::vector<std::string> &ctcpParams);
-        void handleDCCSendCommand(Client *client, const std::vector<std::string> &ctcpParams, const std::string &targetNick);
 
 
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
@@ -247,8 +253,7 @@ class Server
         /* Bot associé au serveur */
         Bot _bot;
 
-        /* Gestionnaire des transferts DCC */
-        DCCManager _dccManager;
+
 
         /* Adresse IP du serveur */
         std::string _serverIp;
