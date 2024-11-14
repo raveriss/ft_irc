@@ -12,9 +12,9 @@ Server* serverInstance = NULL;
 void handleSignal(int signal)
 {
     const char* signalName;
-    if (signal == SIGINT)
+    if (signal == CTRL_C)
         signalName = "SIGINT (ctrl + c)";
-    else if (signal == SIGTSTP)
+    else if (signal == CTRL_Z)
         signalName = "SIGTSTP (ctrl + z)";
     else
         signalName = "Unknown";
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     sa.sa_handler = handleSignal;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == FAILURE || sigaction(SIGTSTP, &sa, NULL) == FAILURE)
+    if (sigaction(CTRL_C, &sa, NULL) == FAILURE || sigaction(CTRL_Z, &sa, NULL) == FAILURE)
     {
         std::cerr << "Erreur lors de la configuration des signaux." << std::endl;
         return EXIT_FAILURE;

@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/14 03:21:05 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/15 00:28:16 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,7 +134,7 @@ Server::Server(unsigned short port, const std::string &password)
 	 * Si l'une des configurations échoue, lance une exception.
 	 * `sa` for S.igA.ction
 	 */
-	if (sigaction(SIGINT, &sa, NULL) == FAILURE || sigaction(SIGTSTP, &sa, NULL) == FAILURE)
+	if (sigaction(CTRL_C, &sa, NULL) == FAILURE || sigaction(CTRL_Z, &sa, NULL) == FAILURE)
 		throw std::runtime_error("Erreur lors de la configuration du signal SIGINT.");
 	init();
 }
@@ -396,7 +396,6 @@ void Server::handleNewConnection()
 		return;
 	}
 
-
     /** 
      * Prépare une structure pour stocker l'adresse du client, compatible avec IPv4 et IPv6.
      */
@@ -484,53 +483,132 @@ void Server::handleNewConnection()
  */
 Channel* Server::getChannelFromMessage(const std::string &message)
 {
+	/**
+	 * `iss` for i.nput s.tring s.tream
+	 *
+     * Crée un flux de chaîne pour lire le message mot par mot.
+     * Ce flux permet de séparer la commande (JOIN, PART, etc.)
+     * et le nom du canal.
+     */
 	std::istringstream iss(message);
+
+    /**
+     * Variables pour stocker la commande et le nom du canal extraits
+     * depuis le flux. La commande sera le premier mot, le nom du canal
+     * sera le second mot.
+     */
 	std::string command, channelName;
+
+    /**
+     * Lit le premier mot du flux dans `command`, puis le second mot
+     * dans `channelName`. Le message est supposé avoir le format :
+     * "COMMAND #channel_name".
+     */
 	iss >> command >> channelName;
 
+    /**
+     * Vérifie si le canal existe dans la collection `_channels`.
+     * Si `channelName` correspond à un canal, retourne un pointeur
+     * vers ce canal ; sinon, retourne NULL pour indiquer l'absence.
+     */
 	if (_channels.find(channelName) != _channels.end())
 		return _channels[channelName];
+
+    /** 
+     * Retourne NULL si le canal n'existe pas, indiquant que le canal
+     * mentionné dans le message n'est pas répertorié sur le serveur.
+     */
 	return NULL;
 }
 
 /**
- * Process a command received from a client
+ * Gère un message reçu d'un client. Met à jour l'activité du client,
+ * lit les données envoyées, traite les messages complets et les passe au bot.
+ * @param client : un pointeur vers l'objet Client
  */
 void Server::handleClientMessage(Client *client)
 {
-	/* Mettre à jour le temps de la dernière activité */
+    /** 
+     * Met à jour le temps de la dernière activité du client.
+     * Cela permet de suivre l'activité et de détecter les clients inactifs.
+     */
 	client->updateLastActivity();
 
-	char buffer[1024];
+    /**
+     * Buffer pour stocker les données reçues du client. La taille est
+     * définie par IRC_BUFFER_SIZE pour éviter l'utilisation de valeurs en dur.
+     */
+	char buffer[IRC_BUFFER_SIZE];
+
+    /**
+     * Reçoit les données du socket client et les stocke dans buffer.
+     * `bytesRead` contient le nombre d'octets lus, ou -1 en cas d'erreur.
+     */
 	int bytesRead = recv(client->getSocket(), buffer, sizeof(buffer) - 1, 0);
+	
+    /**
+     * Vérifie si la connexion a été fermée ou s'il y a eu une erreur.
+     * Si bytesRead est 0, le client a fermé la connexion ; si -1, il y a eu une erreur.
+     */	
 	if (bytesRead <= 0)
 	{
 		if (bytesRead == 0)
 			std::cout << "Le client " << client->getSocket() << " a fermé la connexion.\033[0m" << std::endl;
 		else
 			std::cerr << "Erreur lors de la réception des données du client " << client->getSocket() << std::endl;
+
+        /** 
+         * Supprime le client de la liste active car la connexion est fermée ou en erreur.
+         */		
 		removeClient(client);
 	}
 	else
 	{
+        /**
+         * Termine la chaîne reçue en ajoutant '\0' pour rendre le buffer utilisable comme chaîne C.
+         * Cela garantit que les données lues dans buffer sont bien formées en tant que chaîne.
+         */
 		buffer[bytesRead] = '\0';
+
+        /**
+         * Référence vers le tampon de messages incomplets du client.
+         * Les nouvelles données reçues sont ajoutées pour être traitées plus tard.
+         */
 		std::string& messageBuffer = client->getMessageBuffer();
 		messageBuffer.append(buffer);
 
+        /**
+         * Boucle pour rechercher des messages complets terminés par '\n' dans messageBuffer.
+         * `find('\n')` retourne la position de '\n' s'il est trouvé, ou `npos` sinon.
+         */
 		std::string::size_type pos;
 		while ((pos = messageBuffer.find('\n')) != std::string::npos)
 		{
+            /**
+             * Extrait un message complet (jusqu'à '\n') de messageBuffer et le copie dans `message`.
+             * `erase` supprime ce message de messageBuffer, laissant les données restantes.
+             */
 			std::string message = messageBuffer.substr(0, pos);
 			messageBuffer.erase(0, pos + 1);
 			
-			/* Supprimer le retour chariot s'il est présent */
+            /** 
+             * Supprime le caractère '\r' en fin de message, si présent.
+             * Ceci gère les terminators CRLF des messages réseau (IRC utilise "\r\n").
+             */
 			if (!message.empty() && message[message.size() - 1] == '\r')
 				message.erase(message.size() - 1);
 
-			/* Traiter le message complet */
+            /**
+             * Passe le message complet à la fonction de traitement de commandes.
+             * La fonction `processCommand` gère les commandes IRC envoyées par le client.
+             */
 			processCommand(client, message);
 			
-			/* Pass the message to the bot for moderation */
+            /**
+             * Passe le message au bot pour modération et traitement automatique.
+             * `getChannelFromMessage` identifie le canal associé au message, si applicable.
+             * Si le message correspond à un canal, le bot le modère.
+             */
 			Channel *channel = getChannelFromMessage(message);
 			if (channel)
 				_bot.handleMessage(client, channel, message);
@@ -543,6 +621,10 @@ void Server::handleClientMessage(Client *client)
  */
 void Server::handleModeCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si le nombre d'arguments est suffisant pour traiter la commande.
+     * Si les arguments sont insuffisants, envoie une erreur 461 (ERR_NEEDMOREPARAMS).
+     */
 	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS MODE :Not enough parameters\r\n";
@@ -550,9 +632,16 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère le nom du canal cible de la commande.
+     * `params[1]` contient le nom du canal.
+     */
 	std::string channelName = params[1];
 
-	/* Vérifier que le canal existe */
+    /**
+     * Vérifie si le canal spécifié existe dans la liste des canaux.
+     * Si le canal n'existe pas, envoie une erreur 403 (ERR_NOSUCHCHANNEL).
+     */
 	if (_channels.find(channelName) == _channels.end())
 	{
 		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
@@ -560,9 +649,16 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère un pointeur vers le canal existant.
+     * Ce pointeur permet d'accéder aux propriétés et modes du canal.
+     */
 	Channel *channel = _channels[channelName];
 
-	/* Si aucun autre paramètre, renvoyer les modes actuels du canal */
+    /**
+     * Si aucun autre paramètre n'est fourni, renvoie les modes actuels du canal.
+     * Cette réponse commence par "+", suivi des modes activés (ex: "+itk").
+     */
 	if (params.size() == TWO_ARGMNTS)
 	{
 		std::string modes = "+";
@@ -576,7 +672,10 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	/* Vérifier que le client est opérateur du canal */
+    /**
+     * Vérifie si le client est un opérateur du canal avant de modifier les modes.
+     * Si le client n'est pas un opérateur, envoie une erreur 482 (ERR_CHANOPRIVSNEEDED).
+     */
 	if (!channel->isOperator(client))
 	{
 		std::string error = "482 ERR_CHANOPRIVSNEEDED " + channelName + " :You're not channel operator\r\n";
@@ -584,19 +683,35 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère la chaîne de caractères des modes de la commande.
+     * Chaque caractère de cette chaîne représente un mode à ajouter ou supprimer.
+     */
 	std::string modeString = params[2];
+
+	/* Index du paramètre à traiter pour certains modes (ex : clé ou limite) */
 	size_t paramIndex = 3;
+
+	/* Indique si les modes doivent être ajoutés (true) ou supprimés (false) */
 	bool adding = true;
 
+    /**
+     * Boucle sur chaque caractère de mode dans `modeString`.
+     * Selon le caractère, un mode est activé ou désactivé sur le canal.
+     */
 	for (size_t i = 0; i < modeString.length(); ++i)
 	{
 		char modeChar = modeString[i];
+		
+		/* Si '+', commence à ajouter les modes suivants */
 		if (modeChar == '+')
 			adding = true;
-			
+		
+		/* Si '-', commence à retirer les modes suivants */
 		else if (modeChar == '-')
 			adding = false;
-			
+		
+		/* Modes "invitation seulement" ou "TOPIC" */
 		else if (modeChar == 'i' || modeChar == 't')
 		{
 			if (adding)
@@ -605,6 +720,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 				channel->unsetMode(modeChar);
 		}
 		
+		/* Mode "clé de canal" (mot de passe) */
 		else if (modeChar == 'k')
 		{
 			if (adding)
@@ -623,6 +739,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 				channel->unsetKey();
 		}
 		
+		/* Mode "limite d'utilisateurs" */
 		else if (modeChar == 'l')
 		{
 			if (adding)
@@ -642,6 +759,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 				channel->unsetUserLimit();
 		}
 		
+		/* Mode "opérateur de canal" */
 		else if (modeChar == 'o')
 		{
 			if (params.size() <= paramIndex)
@@ -654,6 +772,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 			std::string nick = params[paramIndex++];
 			Client *targetClient = NULL;
 			
+			/* Recherche du client par son pseudonyme dans la liste des clients */
 			for (size_t j = 0; j < _clients.size(); ++j)
 			{
 				if (_clients[j]->getNickname() == nick)
@@ -685,7 +804,9 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		}
 	}
 
-	/* Notifier les membres du canal des changements de modes */
+    /**
+     * Envoie une notification aux membres du canal indiquant les changements de mode.
+     */
 	std::string modeChangeMsg = ":" + client->getNickname() + " MODE " + channelName + " " + modeString;
 	for (size_t i = 3; i < paramIndex; ++i)
 	{
@@ -702,10 +823,17 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 }
 
 /**
- * Process a Invite command received from a client
+ * Gère la commande INVITE permettant à un client d'inviter un autre client
+ * dans un canal spécifique, en fonction des permissions et de l'état du canal.
+ * @param client : le client qui envoie la commande INVITE
+ * @param params : vecteur contenant les arguments de la commande INVITE
  */
 void Server::handleInviteCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si le nombre d'arguments est suffisant pour traiter l'invitation.
+     * Si insuffisant, envoie une erreur 461 (ERR_NEEDMOREPARAMS).
+     */
 	if (params.size() < THREE_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS INVITE :Not enough parameters\r\n";
@@ -713,10 +841,17 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
 		return;
 	}
 
+    /**
+     * Récupère le pseudonyme du client cible et le nom du canal à partir des arguments.
+     * `params[1]` contient le pseudo cible, et `params[2]` le nom du canal.
+     */
 	std::string targetNick = params[1];
 	std::string channelName = params[2];
 
-	/* Vérifier que le canal existe */
+    /**
+     * Vérifie si le canal spécifié existe dans la liste des canaux du serveur.
+     * Si le canal n'existe pas, envoie une erreur 403 (ERR_NOSUCHCHANNEL).
+     */
 	if (_channels.find(channelName) == _channels.end())
 	{
 		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
@@ -724,9 +859,15 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
 		return;
 	}
 
+    /**
+     * Récupère un pointeur vers le canal existant pour faciliter l'accès à ses propriétés.
+     */
 	Channel *channel = _channels[channelName];
 
-	/* Vérifier que le client est dans le canal */
+    /**
+     * Vérifie si le client qui invite est lui-même membre du canal.
+     * Si le client n'est pas membre, envoie une erreur 442 (ERR_NOTONCHANNEL).
+     */
 	if (!channel->hasClient(client))
 	{
 		std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
@@ -734,7 +875,11 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
 		return;
 	}
 
-	/* Vérifier que le client est opérateur si le canal est en mode 'i' */
+    /**
+     * Si le canal est en mode "invitation seulement" (mode 'i'),
+     * vérifie que le client qui invite est un opérateur du canal.
+     * Si non, envoie une erreur 482 (ERR_CHANOPRIVSNEEDED).
+     */
 	if (channel->hasMode('i') && !channel->isOperator(client))
 	{
 		std::string error = "482 ERR_CHANOPRIVSNEEDED " + channelName + " :You're not channel operator\r\n";
@@ -742,7 +887,10 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
 		return;
 	}
 
-	/* Trouver le client cible */
+    /**
+     * Recherche le client cible par son pseudonyme parmi tous les clients connectés.
+     * Si le client cible n'est pas trouvé, envoie une erreur 401 (ERR_NOSUCHNICK).
+     */
 	Client *targetClient = NULL;
 	for (size_t i = 0; i < _clients.size(); ++i)
 	{
@@ -753,6 +901,9 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
 		}
 	}
 
+    /**
+     * Si le client cible est introuvable, retourne une erreur.
+     */
 	if (!targetClient)
 	{
 		std::string error = "401 ERR_NOSUCHNICK " + targetNick + " :No such nick/channel\r\n";
@@ -760,7 +911,10 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
 		return;
 	}
 
-	/* Vérifier si le client cible est déjà dans le canal */
+    /**
+     * Vérifie si le client cible est déjà membre du canal.
+     * Si oui, envoie une erreur 443 (ERR_USERONCHANNEL).
+     */
 	if (channel->hasClient(targetClient))
 	{
 		std::string error = "443 ERR_USERONCHANNEL " + targetNick + " " + channelName + " :is already on channel\r\n";
@@ -768,23 +922,40 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
 		return;
 	}
 
-	/* Ajouter le client cible à la liste des invités */
+    /**
+     * Ajoute le client cible à la liste des invités du canal.
+     * Cela permet au client invité de rejoindre le canal par la suite.
+     */
 	channel->inviteClient(targetClient);
 
-	/* Informer le client cible de l'invitation */
+    /**
+     * Envoie un message d'invitation au client cible pour l'informer de l'invitation.
+     * Le client cible voit un message indiquant qu'il a été invité à rejoindre le canal.
+     */
 	std::string inviteMsg = ":" + client->getNickname() + " INVITE " + targetNick + " :" + channelName + "\r\n";
 	send(targetClient->getSocket(), inviteMsg.c_str(), inviteMsg.length(), 0);
 
-	/* Informer le client qui invite que l'invitation a été envoyée */
+    /**
+     * Confirme au client qui a envoyé l'invitation que celle-ci a été envoyée avec succès.
+     * Le client qui invite voit une réponse 341 confirmant l'envoi de l'invitation.
+     */
 	std::string reply = "341 " + client->getNickname() + " " + targetNick + " :" + channelName + "\r\n";
 	send(client->getSocket(), reply.c_str(), reply.length(), 0);
 }
 
 /**
- * Process a Topic command received from a client
+ * Gère la commande TOPIC pour définir ou consulter le sujet d'un canal.
+ * La commande permet de définir un nouveau sujet ou de consulter le sujet actuel
+ * selon les permissions et le mode de configuration du canal.
+ * @param client : le client qui envoie la commande TOPIC
+ * @param params : vecteur contenant les arguments de la commande TOPIC
  */
 void Server::handleTopicCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si le nombre d'arguments est suffisant pour la commande TOPIC.
+     * Si insuffisant, envoie une erreur 461 (ERR_NEEDMOREPARAMS).
+     */
 	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS TOPIC :Not enough parameters\r\n";
@@ -792,9 +963,16 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 		return;
 	}
 
+    /**
+     * Récupère le nom du canal cible de la commande.
+     * `params[1]` contient le nom du canal.
+     */
 	std::string channelName = params[1];
 
-	/* Vérifier que le canal existe */
+    /**
+     * Vérifie si le canal spécifié existe dans la liste des canaux.
+     * Si le canal n'existe pas, envoie une erreur 403 (ERR_NOSUCHCHANNEL).
+     */
 	if (_channels.find(channelName) == _channels.end())
 	{
 		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
@@ -802,9 +980,15 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 		return;
 	}
 
+    /**
+     * Récupère un pointeur vers le canal existant pour faciliter l'accès à ses propriétés.
+     */
 	Channel *channel = _channels[channelName];
 
-	/* Vérifier que le client est dans le canal */
+    /**
+     * Vérifie si le client est un membre du canal.
+     * Si non, envoie une erreur 442 (ERR_NOTONCHANNEL) indiquant que le client n'est pas dans le canal.
+     */
 	if (!channel->hasClient(client))
 	{
 		std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
@@ -813,7 +997,11 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 		return;
 	}
 
-	/* Si aucun sujet n'est fourni, renvoyer le sujet actuel */
+    /**
+     * Si aucun sujet n'est fourni dans les arguments, renvoie le sujet actuel du canal.
+     * Si un sujet est défini, envoie une réponse 332 avec le sujet actuel ;
+     * sinon, envoie une réponse 331 indiquant que le canal n'a pas de sujet.
+     */
 	if (params.size() == TWO_ARGMNTS)
 	{
 		if (channel->hasTopic())
@@ -830,7 +1018,10 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 		return;
 	}
 
-	/* Vérifier les permissions si le canal est en mode 't' */
+    /**
+     * Si le canal est en mode 't', seuls les opérateurs peuvent définir le sujet.
+     * Vérifie les permissions de l'opérateur et, si elles manquent, envoie une erreur 482.
+     */
 	if (channel->hasMode('t') && !channel->isOperator(client))
 	{
 		std::string error = "482 ERR_CHANOPRIVSNEEDED " + channelName + " :You're not channel operator\r\n";
@@ -838,7 +1029,10 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 		return;
 	}
 
-	/* Construire le nouveau sujet */
+    /**
+     * Construit le nouveau sujet en combinant les paramètres, car le sujet
+     * peut inclure plusieurs mots. Supprime le caractère ':' s'il est présent.
+     */
 	std::string topic = params[2];
 	if (topic[0] == ':')
 		topic = topic.substr(1);
@@ -847,10 +1041,15 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 		topic += " " + params[i];
 	}
 
-	/* Définir le nouveau sujet */
+    /**
+     * Définit le nouveau sujet du canal avec le texte assemblé.
+     */
 	channel->setTopic(topic);
 
-	/* Notifier les membres du canal */
+    /**
+     * Notifie tous les membres du canal que le sujet a été modifié.
+     * Envoie un message indiquant le changement de sujet pour chaque membre.
+     */
 	std::string topicMsg = ":" + client->getNickname() + " TOPIC " + channelName + " :" + topic + "\r\n";
 	const std::vector<Client*> &channelClients = channel->getClients();
 	for (size_t i = 0; i < channelClients.size(); ++i)
@@ -860,10 +1059,17 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 }
 
 /**
- * Process a Kick command received from a client
+ * Gère la commande KICK pour expulser un membre d'un canal.
+ * Un opérateur de canal peut utiliser cette commande pour retirer un membre spécifique du canal.
+ * @param client : le client qui envoie la commande KICK
+ * @param params : vecteur contenant les arguments de la commande KICK
  */
 void Server::handleKickCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si le nombre d'arguments est suffisant pour la commande KICK.
+     * Si insuffisant, envoie une erreur 461 (ERR_NEEDMOREPARAMS).
+     */
 	if (params.size() < THREE_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS KICK :Not enough parameters\r\n";
@@ -871,11 +1077,17 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère le nom du canal cible et le pseudonyme du client à expulser.
+     * `params[1]` contient le nom du canal et `params[2]` le pseudonyme de la cible.
+     */
 	std::string channelName = params[1];
 	std::string targetNick = params[2];
 
-	/* Construire le commentaire si fourni */
-	/* Par défaut, le pseudonyme de l'expéditeur */
+    /**
+     * Construit le commentaire pour l'expulsion si fourni. 
+     * Par défaut, le commentaire contient le pseudonyme de l'expéditeur.
+     */
 	std::string comment = client->getNickname();
 	if (params.size() >= 4)
 	{
@@ -888,7 +1100,10 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		}
 	}
 
-	/* Vérifier que le canal existe */
+    /**
+     * Vérifie si le canal spécifié existe dans la liste des canaux.
+     * Si le canal n'existe pas, envoie une erreur 403 (ERR_NOSUCHCHANNEL).
+     */
 	if (_channels.find(channelName) == _channels.end())
 	{
 		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
@@ -896,9 +1111,15 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère un pointeur vers le canal pour faciliter l'accès à ses propriétés.
+     */
 	Channel *channel = _channels[channelName];
 
-	/* Vérifier que le client est dans le canal */
+    /**
+     * Vérifie si le client qui envoie la commande est membre du canal.
+     * Si le client n'est pas dans le canal, envoie une erreur 442 (ERR_NOTONCHANNEL).
+     */
 	if (!channel->hasClient(client))
 	{
 		std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
@@ -906,7 +1127,11 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	/* Vérifier que le client est opérateur du canal */
+    /**
+     * Vérifie si le client est un opérateur du canal, car seuls les opérateurs
+     * sont autorisés à expulser d'autres membres.
+     * Si le client n'est pas opérateur, envoie une erreur 482 (ERR_CHANOPRIVSNEEDED).
+     */
 	if (!channel->isOperator(client))
 	{
 		std::string error = "482 ERR_CHANOPRIVSNEEDED " + channelName + " :You're not channel operator\r\n";
@@ -914,7 +1139,10 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	/* Trouver le client cible */
+    /**
+     * Recherche le client cible par son pseudonyme parmi les clients connectés.
+     * Si le client cible n'est pas trouvé, envoie une erreur 401 (ERR_NOSUCHNICK).
+     */
 	Client *targetClient = NULL;
 	for (size_t i = 0; i < _clients.size(); ++i)
 	{
@@ -925,6 +1153,9 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		}
 	}
 
+    /**
+     * Si le client cible est introuvable, retourne une erreur.
+     */
 	if (!targetClient)
 	{
 		std::string error = "401 ERR_NOSUCHNICK " + targetNick + " :No such nick/channel\r\n";
@@ -932,7 +1163,10 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	/* Vérifier que le client cible est dans le canal */
+    /**
+     * Vérifie si le client cible est membre du canal.
+     * Si non, envoie une erreur 441 (ERR_USERNOTINCHANNEL) indiquant que le client cible n'est pas dans le canal.
+     */
 	if (!channel->hasClient(targetClient))
 	{
 		std::string error = "441 ERR_USERNOTINCHANNEL " + targetNick + " " + channelName + " :They aren't on that channel\r\n";
@@ -940,7 +1174,10 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	/* Notifier les membres du canal du kick */
+    /**
+     * Notifie tous les membres du canal que le client cible est expulsé,
+     * en envoyant un message indiquant l'auteur de l'expulsion et la raison.
+     */
 	std::string kickMsg = ":" + client->getNickname() + " KICK " + channelName + " " + targetNick + " :" + comment + "\r\n";
 	const std::vector<Client*> &channelClients = channel->getClients();
 	for (size_t i = 0; i < channelClients.size(); ++i)
@@ -948,11 +1185,15 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 		send(channelClients[i]->getSocket(), kickMsg.c_str(), kickMsg.length(), 0);
 	}
 
-	/* Retirer le client cible du canal */
+    /**
+     * Retire le client cible du canal et met à jour son état pour refléter son départ.
+     */
 	channel->removeClient(targetClient);
 	targetClient->leaveChannel(channel);
 
-	/* Si le canal est vide, le supprimer */
+    /**
+     * Si le canal devient vide après l'expulsion, il est automatiquement supprimé du serveur.
+     */
 	if (channel->getClients().empty())
 	{
 		_channels.erase(channelName);

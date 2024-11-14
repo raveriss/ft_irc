@@ -6,14 +6,14 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/14 03:16:19 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/14 22:47:55 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-/* Inclusions pour les clients, les canaux et le bot */
+/* Inclusions pour clients, canaux et bot */
 #include "Bot.hpp"
 #include "Client.hpp"
 
@@ -44,13 +44,13 @@
 /* For exit() */
 #include <cstdlib>
 
-/* Inclusion pour les appels système de POSIX (par ex., close) */
+/* For close() */
 #include <unistd.h>
 
-/* Pour manipuler les options de fichier, comme O_NONBLOCK */
+/* For O_NONBLOCK */
 #include <fcntl.h>
 
-/* Inclusion pour les opérations d’entrée/sortie standard */
+/* For std::cin, std::cout */
 #include <iostream>
 
 /* Pour utiliser errno */
@@ -106,17 +106,36 @@
 /* Signal d'interruption déclenché par Ctrl + C */
 #define CTRL_C SIGINT
 
-/* Signal de suspension temporaire déclenché par Ctrl + Z */
+/* Signal de suspension déclenché par Ctrl + Z */
 #define CTRL_Z SIGTSTP
 
 /* Index de l'argument pour le port dans argv */
 #define PORT_ARG_INDEX 1
 
+/*   -'-,'-,-',-'   */
+/*       MODE       */
+/*   -'-,'-,-',-'   */
 
+/* Mode "invitation seulement" */
+#define INVITE_ONLY 'i'
+
+/* Restriction de la modification du TOPIC aux opérateurs */
+#define TOPIC_OP_ONLY 't'
+
+/* Mode "clé de canal" (mot de passe) */
+#define KEY 'k'
+
+/* Mode "opérateur de canal" */
+#define OPERATOR 'o'
+
+/* Mode "limite d'utilisateurs" */
+#define USER_LIMIT 'l'
+
+/*  Taille du tampon IRC */
+#define IRC_BUFFER_SIZE 1024
 
 #define PING(client_id, param) (client_id + "\033[43m PING :" + param + "\033[0m\r\n")
 #define PONG(client_id, param) (client_id + "\033[43m PONG :" + param + "\033[0m\r\n")
-
 
 /* Déclaration anticipée de Client */
 class Client;
@@ -156,8 +175,6 @@ class Server
     
         /* Retourne le nom du serveur */
         const std::string& getServerName() const;
-
-
 
         /* Définit la valeur maximale de fd */
         void setFdMax(int fd);
@@ -225,18 +242,12 @@ class Server
         bool handlePingPongCommand(Client *client, const std::string &args);
 
 
-
-
-
-
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
         /*                         GESTION DES RÉPONSES ET MAINTENANCE              */
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
 
         /* Envoie la réponse NAMES à un client pour un canal donné */
         void sendNamesReply(Client *client, Channel *channel);
-
-
 
         /* Gestion des signaux */
         static void handleSignal(int signal);
@@ -259,10 +270,6 @@ class Server
         std::string getBackgroundColorCode(int socket);
 
         void printClientInfo(int newSocket, const std::string& host);
-
-
-
-        /* Vérifie les réponses aux PING */
 
     private:
 
@@ -297,11 +304,10 @@ class Server
         /* Bot associé au serveur */
         Bot _bot;
 
-
-
         /* Adresse IP du serveur */
         std::string _serverIp;
 
+        /* Liste des clients à supprimer */
         std::vector<Client*> _clientsToRemove;
 
 
