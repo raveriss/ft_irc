@@ -6,14 +6,13 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:06:36 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/04 21:30:16 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/14 01:33:42 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 /* Inclusions pour les clients et les canaux */
 #include "../incs/Client.hpp"
 #include "../incs/Channel.hpp"
-#include "../incs/DCCManager.hpp"
 
 /**
  * Constructor
@@ -33,7 +32,8 @@ Client::Client(int socket)
 Client::~Client()
 {
     close(_socket);
-    for (std::set<Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+    for (std::set<Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+    {
         (*it)->removeClient(this);
     }
     _channels.clear();
@@ -223,9 +223,7 @@ bool Client::isInChannel(const std::string &channelName) const
     for (std::set<Channel*>::const_iterator it = _channels.begin(); it != _channels.end(); ++it)
     {
         if ((*it)->getName() == channelName)
-        {
             return true;
-        }
     }
     return false;
 }
@@ -257,35 +255,40 @@ time_t Client::getLastPongTime() const
 /**
  * @return true if the client is away, false otherwise
  */
-bool Client::isAway() const {
+bool Client::isAway() const
+{
     return _isAway;
 }
 
 /**
  * Set the away status of the client
  */
-void Client::setAway(bool status) {
+void Client::setAway(bool status)
+{
     _isAway = status;
 }
 
 /**
  * @return true if the client is an operator, false otherwise
  */
-bool Client::isOperator() const {
+bool Client::isOperator() const
+{
     return _isOperator;
 }
 
 /**
  * Set the operator status of the client
  */
-void Client::setOperator(bool status) {
+void Client::setOperator(bool status)
+{
     _isOperator = status;
 }
 
 /**
  * Update the time of the last activity
  */
-void Client::updateLastActivity() {
+void Client::updateLastActivity()
+{
     
     /* Mettre à jour l'heure de la dernière activité */
     _lastActivityTime = time(NULL);
@@ -296,7 +299,6 @@ void Client::updateLastActivity() {
  */
 bool Client::isPingReceived() const
 {
-    
     return pingReceived;
 }
 

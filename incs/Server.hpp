@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/05 23:28:30 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/14 01:56:40 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,12 +44,14 @@
 /* For exit() */
 #include <cstdlib>
 
+/* Inclusion pour les appels système de POSIX (par ex., close) */
 #include <unistd.h>
 
+/* Pour manipuler les options de fichier, comme O_NONBLOCK */
 #include <fcntl.h>
 
+/* Inclusion pour les opérations d’entrée/sortie standard */
 #include <iostream>
-
 
 /* Pour utiliser errno */
 #include <cerrno>
@@ -57,17 +59,53 @@
 /* Pour utiliser strerror */
 #include <cstring>
 
-/* For UINT16_MAX */
-#define UINT16_MAX 65535
+/* For struct ifaddrs */
+#include <ifaddrs.h>
 
+/* For inet_ntoa() */
+#include <arpa/inet.h>
+
+/* For UINT16_MAX */
+#include <stdint.h>
+
+/* For MAX_UINT16_BITS */ 
+#define MAX_UINT16_BITS UINT16_MAX
+
+/* Définit le protocole d'adresse comme IPv4 */
 #define IPV4 AF_INET
+
+/* Définit le protocole de transport comme TCP */
 #define TCP SOCK_STREAM
+
+/* Définit le protocole par défaut */
 #define DEFLT_PROT 0
 
-#define GLOB_SOCK_OPT SOL_SOCKET         // Niveau d'option du socket
-#define REUSE_ADDR SO_REUSEADDR     // Option pour réutiliser l'adresse
-#define OPT_ON 1                    // Activer l'option
+/* Niveau d'option du socket */
+#define GLOB_SOCK_OPT SOL_SOCKET
+
+/* Option pour réutiliser l'adresse */
+#define REUSE_ADDR SO_REUSEADDR
+
+/* Activer l'option */
+#define OPT_ON 1
+
+/* Ecoute maximale */
 #define ALL_ADDR INADDR_ANY
+
+/* Taille maximale de la file d'attente */
+#define MAX_CONNEXIONS SOMAXCONN
+
+/* Code de retour pour une opération échouée */
+#define FAILURE -1
+
+/* Nombre de paramètres requis pour la commande */
+#define PARAMS_REQUIRED 2
+
+/* Signal d'interruption déclenché par Ctrl + C */
+#define CTRL_C SIGINT
+
+/* Signal de suspension temporaire déclenché par Ctrl + Z */
+#define CTRL_Z SIGTSTP
 
 
 #define PING(client_id, param) (client_id + "\033[43m PING :" + param + "\033[0m\r\n")

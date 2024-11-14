@@ -9,7 +9,8 @@
 Server* serverInstance = NULL;
 
 /* Gestionnaire de signaux */
-void handleSignal(int signal) {
+void handleSignal(int signal)
+{
     const char* signalName;
     if (signal == SIGINT)
         signalName = "SIGINT (ctrl + c)";
@@ -20,7 +21,8 @@ void handleSignal(int signal) {
 
     std::cout << "\nSignal " << signalName << " reçu, fermeture du serveur..." << std::endl;
 
-    if (serverInstance) {
+    if (serverInstance)
+    {
         serverInstance->shutdown();
         serverInstance = NULL;
     }
@@ -30,9 +32,11 @@ void handleSignal(int signal) {
 /**
  * Main function
  */
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     /* Vérification des arguments */
-    if (argc != 3) {
+    if (argc != 3)
+    {
         std::cerr << "Usage: ./micro_irc <port> <password>" << std::endl;
         return EXIT_FAILURE;
     }
@@ -42,7 +46,8 @@ int main(int argc, char **argv) {
     long port = std::strtol(argv[1], &endptr, 10);
 
     /* Vérification de la validité du port */
-    if (*endptr != '\0' || port <= 0 || port > UINT16_MAX) {
+    if (*endptr != '\0' || port <= 0 || port > MAX_UINT16_BITS)
+    {
         std::cerr << "Port invalide. Veuillez spécifier un port entre 1 et 65535." << std::endl;
         return EXIT_FAILURE;
     }
@@ -55,7 +60,8 @@ int main(int argc, char **argv) {
     sa.sa_handler = handleSignal;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == -1 || sigaction(SIGTSTP, &sa, NULL) == -1) {
+    if (sigaction(SIGINT, &sa, NULL) == FAILURE || sigaction(SIGTSTP, &sa, NULL) == FAILURE)
+    {
         std::cerr << "Erreur lors de la configuration des signaux." << std::endl;
         return EXIT_FAILURE;
     }
@@ -102,15 +108,16 @@ int main(int argc, char **argv) {
     }
 
     /* Gestion des exceptions */
-    catch (const std::exception &e) {
+    catch (const std::exception &e)
+    {
         std::cerr << "Erreur du serveur : " << e.what() << std::endl;
-        if (serverInstance) {
+        if (serverInstance)
+        {
             /* Ensuring memory release on error */
             delete serverInstance;
             serverInstance = NULL;
         }
         return EXIT_FAILURE;
     }
-
     return EXIT_SUCCESS;
 }

@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:21:21 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/02 00:56:09 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/14 01:33:54 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,8 @@ Channel::Channel(const std::string &name)
  */
 Channel::~Channel()
 {
-    for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+    for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    {
         (*it)->leaveChannel(this);
     }
     _clients.clear();
@@ -46,9 +47,7 @@ const std::string &Channel::getName() const
 void Channel::addClient(Client *client)
 {
     if (!hasClient(client))
-    {
         _clients.push_back(client);
-    }
 }
 
 /**
@@ -61,14 +60,12 @@ void Channel::removeClient(Client *client)
     _clients.erase(std::remove(_clients.begin(), _clients.end(), client), _clients.end());
 
     /* Suppression du client de la liste des opérateurs */
-    if (_operators.erase(client) > 0) {
+    if (_operators.erase(client) > 0)
         std::cout << "\033[0mClient supprimé de _operators" << std::endl;
-    }
 
     /* Suppression du client de la liste des invités */
-    if (_invitedClients.erase(client) > 0) {
+    if (_invitedClients.erase(client) > 0)
         std::cout << "\033[0mClient supprimé de _invitedClients" << std::endl;
-    }
 }
 
 /**
@@ -253,6 +250,7 @@ bool Channel::hasTopic() const
 /**
  * Return true if the client has voice, false otherwise
  */
-bool Channel::hasVoice(const Client *client) const {
+bool Channel::hasVoice(const Client *client) const
+{
     return _voicedClients.find(const_cast<Client*>(client)) != _voicedClients.end();
 }

@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:21:24 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/28 22:43:31 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/14 01:34:14 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,8 @@ Bot::Bot()
 /**
  * Destructeur
  */
-Bot::~Bot() {
+Bot::~Bot()
+{
     
     /* Vider les conteneurs */
     _forbiddenWords.clear();
@@ -113,9 +114,7 @@ void Bot::kickClient(Client *client, Channel *channel)
     for (size_t i = 0; i < channelClients.size(); ++i)
     {
         if (channelClients[i] != client)
-        {
             send(channelClients[i]->getSocket(), notification.c_str(), notification.length(), 0);
-        }
     }
 
     /* Remove the client from the channel */
