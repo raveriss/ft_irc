@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/14 02:10:23 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/14 02:20:47 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,13 +103,34 @@ Server::Server(unsigned short port, const std::string &password)
 	instance = this;
 
 	/**
-	 * Configuration du gestionnaire de signaux pour SIGINT et SIGTSTP
+	 * Initialise un gestionnaire de signaux pour permettre une fermeture propre du serveur.
+	 * Configuration pour intercepter SIGINT (Ctrl+C) et SIGTSTP (Ctrl+Z).
 	 * `sa` for S.igA.ction
 	 */
 	struct sigaction sa;
+
+    /**
+     * Définit la fonction de gestion des signaux.
+     * Lorsqu'un signal est reçu, Server::handleSignal sera appelé pour une fermeture propre.
+     */
 	sa.sa_handler = &Server::handleSignal;
+
+    /**
+     * Initialise le masque de signaux à vide, ne bloque aucun autre signal.
+     * Le serveur pourra continuer à recevoir d'autres signaux pendant l'exécution de handleSignal.
+     */
 	sigemptyset(&sa.sa_mask);
+
+    /**
+     * Définit le drapeau SA_RESTART pour relancer les appels système interrompus.
+     * Cela assure que certaines fonctions bloquantes, comme accept(), reprennent automatiquement.
+     */
 	sa.sa_flags = SA_RESTART;
+
+    /**
+     * Configure les signaux SIGINT et SIGTSTP pour utiliser la structure sa.
+     * Si l'une des configurations échoue, lance une exception.
+     */
 	if (sigaction(SIGINT, &sa, NULL) == FAILURE || sigaction(SIGTSTP, &sa, NULL) == FAILURE)
 		throw std::runtime_error("Erreur lors de la configuration du signal SIGINT.");
 	init();
