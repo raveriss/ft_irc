@@ -35,7 +35,7 @@ void handleSignal(int signal)
 int main(int argc, char **argv)
 {
     /* Vérification des arguments */
-    if (argc != 3)
+    if (argc != THREE_ARGMNTS)
     {
         std::cerr << "Usage: ./micro_irc <port> <password>" << std::endl;
         return EXIT_FAILURE;
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
     /* Conversion du port en entier */
     char *endptr;
-    long port = std::strtol(argv[1], &endptr, 10);
+    long port = std::strtol(argv[PORT_ARG_INDEX], &endptr, 10);
 
     /* Vérification de la validité du port */
     if (*endptr != '\0' || port <= 0 || port > MAX_UINT16_BITS)

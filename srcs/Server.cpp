@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/14 02:20:47 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/14 03:21:05 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,28 +109,31 @@ Server::Server(unsigned short port, const std::string &password)
 	 */
 	struct sigaction sa;
 
-    /**
-     * Définit la fonction de gestion des signaux.
-     * Lorsqu'un signal est reçu, Server::handleSignal sera appelé pour une fermeture propre.
-     */
+	/**
+	 * Définit la fonction de gestion des signaux.
+	 * Lorsqu'un signal est reçu, Server::handleSignal sera appelé pour une fermeture propre.
+	 */
 	sa.sa_handler = &Server::handleSignal;
 
-    /**
-     * Initialise le masque de signaux à vide, ne bloque aucun autre signal.
-     * Le serveur pourra continuer à recevoir d'autres signaux pendant l'exécution de handleSignal.
-     */
+	/**
+	 * Initialise le masque de signaux à vide, ne bloque aucun autre signal.
+	 * Le serveur pourra continuer à recevoir d'autres signaux pendant l'exécution de handleSignal.
+	 * `sa` for S.igA.ction
+	 */
 	sigemptyset(&sa.sa_mask);
 
-    /**
-     * Définit le drapeau SA_RESTART pour relancer les appels système interrompus.
-     * Cela assure que certaines fonctions bloquantes, comme accept(), reprennent automatiquement.
-     */
+	/**
+	 * Définit le drapeau SA_RESTART pour relancer les appels système interrompus.
+	 * Cela assure que certaines fonctions bloquantes, comme accept(), reprennent automatiquement.
+	 * `sa` for S.igA.ction
+	 */
 	sa.sa_flags = SA_RESTART;
 
-    /**
-     * Configure les signaux SIGINT et SIGTSTP pour utiliser la structure sa.
-     * Si l'une des configurations échoue, lance une exception.
-     */
+	/**
+	 * Configure les signaux SIGINT et SIGTSTP pour utiliser la structure sa.
+	 * Si l'une des configurations échoue, lance une exception.
+	 * `sa` for S.igA.ction
+	 */
 	if (sigaction(SIGINT, &sa, NULL) == FAILURE || sigaction(SIGTSTP, &sa, NULL) == FAILURE)
 		throw std::runtime_error("Erreur lors de la configuration du signal SIGINT.");
 	init();
@@ -393,6 +396,7 @@ void Server::handleNewConnection()
 		return;
 	}
 
+
     /** 
      * Prépare une structure pour stocker l'adresse du client, compatible avec IPv4 et IPv6.
      */
@@ -539,7 +543,7 @@ void Server::handleClientMessage(Client *client)
  */
 void Server::handleModeCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 2)
+	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS MODE :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -559,7 +563,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 	Channel *channel = _channels[channelName];
 
 	/* Si aucun autre paramètre, renvoyer les modes actuels du canal */
-	if (params.size() == PARAMS_REQUIRED)
+	if (params.size() == TWO_ARGMNTS)
 	{
 		std::string modes = "+";
 		
@@ -702,7 +706,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
  */
 void Server::handleInviteCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 3)
+	if (params.size() < THREE_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS INVITE :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -781,7 +785,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
  */
 void Server::handleTopicCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 2)
+	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS TOPIC :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -810,7 +814,7 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 	}
 
 	/* Si aucun sujet n'est fourni, renvoyer le sujet actuel */
-	if (params.size() == PARAMS_REQUIRED)
+	if (params.size() == TWO_ARGMNTS)
 	{
 		if (channel->hasTopic())
 		{
@@ -860,7 +864,7 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
  */
 void Server::handleKickCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 3)
+	if (params.size() < THREE_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS KICK :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -961,7 +965,7 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
  */
 void Server::handleCapCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 2)
+	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string nick = client->isRegistered() ? client->getNickname() : "*";
 		std::string error = ":" + _serverName + " 461 " + nick + " CAP :Not enough parameters\r\n";
@@ -1131,7 +1135,7 @@ void Server::handlePassCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	if (params.size() < 2)
+	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS PASS :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -1182,7 +1186,7 @@ bool Server::isValidNickname(const std::string &nickname)
  */
 void Server::handleNickCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 2)
+	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "431 ERR_NONICKNAMEGIVEN :No nickname given\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -1263,7 +1267,7 @@ void Server::handleUserCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	if (params.size() < 5)
+	if (params.size() < FIVE_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS USER :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -1402,7 +1406,7 @@ void Server::sendNamesReply(Client *client, Channel *channel)
  */
 void Server::handleJoinCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 2)
+	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS JOIN :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -1498,7 +1502,7 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
  */
 void Server::handlePartCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 2)
+	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS PART :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -1551,7 +1555,7 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
  */
 void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string> &params)
 {
-	if (params.size() < 3)
+	if (params.size() < THREE_ARGMNTS)
 	{
 		std::string error = ":" + _serverName + " 461 " + client->getNickname() + " PRIVMSG :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
@@ -1695,6 +1699,7 @@ void Server::setFdMax(int fd)
 	if (fd > _fdMax)
 		_fdMax = fd;
 }
+
 
 std::string & Server::getServerIp()
 {

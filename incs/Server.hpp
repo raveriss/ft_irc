@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/14 01:56:40 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/14 03:16:19 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,13 +99,19 @@
 #define FAILURE -1
 
 /* Nombre de paramètres requis pour la commande */
-#define PARAMS_REQUIRED 2
+#define TWO_ARGMNTS 2
+#define THREE_ARGMNTS 3
+#define FIVE_ARGMNTS 5
 
 /* Signal d'interruption déclenché par Ctrl + C */
 #define CTRL_C SIGINT
 
 /* Signal de suspension temporaire déclenché par Ctrl + Z */
 #define CTRL_Z SIGTSTP
+
+/* Index de l'argument pour le port dans argv */
+#define PORT_ARG_INDEX 1
+
 
 
 #define PING(client_id, param) (client_id + "\033[43m PING :" + param + "\033[0m\r\n")
