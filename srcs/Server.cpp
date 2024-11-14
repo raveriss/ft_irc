@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/15 00:28:16 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/15 00:52:16 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1202,95 +1202,215 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
 }
 
 /**
- * Process a Cap command received from a client
+ * Gère la commande CAP (Capabilities), utilisée par les clients pour négocier 
+ * des fonctionnalités supplémentaires (capacités) avec le serveur IRC.
+ * Cette fonction vérifie les sous-commandes et répond en fonction des capacités supportées.
+ * @param client : le client qui envoie la commande CAP
+ * @param params : vecteur contenant les arguments de la commande CAP
  */
 void Server::handleCapCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si le nombre d'arguments est suffisant pour traiter la commande CAP.
+     * Si insuffisant, envoie une erreur 461 (ERR_NEEDMOREPARAMS) indiquant le manque d'arguments.
+     */
 	if (params.size() < TWO_ARGMNTS)
 	{
+		/* Si le client est enregistré, utilise son pseudonyme ; sinon, utilise "*" */
 		std::string nick = client->isRegistered() ? client->getNickname() : "*";
 		std::string error = ":" + _serverName + " 461 " + nick + " CAP :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
 
+    /**
+     * Récupère la sous-commande CAP fournie dans les arguments.
+     * `params[1]` contient la sous-commande de la commande CAP, comme "LS" ou "END".
+     */
 	std::string subCommand = params[1];
 
+    /**
+     * Traite la sous-commande "LS" qui liste les capacités supportées par le serveur.
+     * Si des capacités sont définies, elles seront listées ici.
+     */
 	if (subCommand == "LS")
 	{
-		/* Laisser vide si aucune capacité n'est supportée */
+		/* Par défaut, les capacités supportées sont laissées vides pour cette implémentation */
 		std::string capabilities = "";
 
-		/* Gérer les capacités multi-lignes si le client le demande */
+        /**
+         * Gère les capacités multi-lignes si le client le demande (version 302),
+         * permettant d'envoyer de longues listes de capacités en plusieurs messages.
+         */
 		if (params.size() >= 3 && params[2] == "302")
 		{
 			/* Gérer les capacités multi-lignes si nécessaire */
 		}
 
+		/* Utilise le pseudonyme enregistré du client ou "*" s'il n'est pas encore enregistré */
 		std::string nick = client->isRegistered() ? client->getNickname() : "*";
 
+		/* Forme et envoie la réponse avec la liste des capacités supportées (ici vide) */
 		std::string response = ":" + _serverName + " CAP " + nick + " LS :" + capabilities + "\r\n";
 		send(client->getSocket(), response.c_str(), response.length(), 0);
-	} else if (subCommand == "END")
+	}
+
+    /**
+     * Gère la sous-commande "END", signifiant que le client termine la négociation des capacités.
+     * Aucune action spécifique n'est requise pour cette implémentation de base.
+     */	
+	else if (subCommand == "END")
 	{
-		/* Le client termine la négociation des capacités */
-		/* Aucune action spécifique requise pour une implémentation de base */
-	} else
+		/* Rien à faire dans cette implémentation, car aucune capacité n'est supportée */
+	}
+
+    /**
+     * Gère les sous-commandes inconnues ou non supportées.
+     * Envoie une erreur 410 (ERR_INVALIDCAPCMD) pour indiquer une sous-commande non valide.
+     */	
+	else
 	{
-		/* Sous-commande inconnue */
+		/* Utilise le pseudonyme enregistré ou "*" pour identifier le client dans l'erreur */
 		std::string nick = client->isRegistered() ? client->getNickname() : "*";
 		std::string error = ":" + _serverName + " 410 " + nick + " " + subCommand + " :Invalid CAP subcommand\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 	}
 }
 
+/**
+ * Envoie un message à un client via le descripteur de fichier donné, avec une limite de longueur.
+ * Tronque les messages trop longs et ajoute une terminaison CRLF (Carriage Return Line Feed) avant envoi.
+ * @param message : le message à envoyer
+ * @param sender_fd : le descripteur de fichier du client destinataire
+ * @return bool : retourne true si le message a été envoyé
+ */
 bool Server::send_message(const std::string &message, int sender_fd)
 {
+    /**
+     * Crée une copie temporaire du message pour ajuster sa longueur si nécessaire.
+     * Ceci garantit que l'original reste intact.
+     */
 	std::string tmp = message;
+
+    /**
+     * Si la taille du message dépasse 510 caractères, tronque le message.
+     * Ajoute "\r\n" pour indiquer la fin du message (protocole IRC).
+     * La limite de 510 caractères est imposée pour éviter des messages trop longs qui pourraient causer des erreurs.
+     */
 	if (tmp.size() > 510)
 		tmp = tmp.substr(0, 510) + "\r\n";
+
+    /**
+     * Envoie le message (ou sa version tronquée) au client via le descripteur de fichier `sender_fd`.
+     * La valeur 0 indique l'envoi sans options supplémentaires (voir `send()` pour plus de détails).
+     */
 	send(sender_fd, tmp.c_str(), tmp.size(), 0);
+
+    /**
+     * Affiche une confirmation dans la console du serveur pour indiquer que le message a été envoyé,
+     * avec un code couleur jaune (ANSI) pour la visibilité.
+     */
 	std::cout << "\n\033[43mMessage sent: " << tmp << "\033[0m";
+
+	/* Retourne true pour indiquer que le message a été envoyé avec succès. */
 	return true;
 }
 
 /**
- * Process a PONG command received from a client
+ * Gère la commande PING/PONG pour vérifier ou répondre à la disponibilité d'un client.
+ * Utilisé pour maintenir la connexion active entre le serveur et le client.
+ * @param client : le client qui envoie ou reçoit la commande PING/PONG
+ * @param args : arguments fournis avec la commande, comme un identifiant de synchronisation
+ * @return bool : retourne true après l'envoi de la réponse au client
  */
 bool Server::handlePingPongCommand(Client *client, const std::string &args)
 {
+    /**
+     * Crée un identifiant unique pour le client incluant son pseudonyme, son nom d'utilisateur,
+     * et l'adresse IP du serveur. Ce format est utilisé pour l'affichage et l'identification.
+     * Code couleur jaune pour l'affichage console pour faciliter le suivi.
+     */
 	std::string client_id = "\033[43m" + client->getNickname() + "!" + client->getUsername() + "@" + _serverIp + "\033[0m";
+	
+    /**
+     * Initialisation de la variable `response` pour stocker le message PING ou PONG
+     * qui sera envoyé en réponse au client.
+     */	
 	std::string response;
 
+    /**
+     * Si le client n'est pas encore enregistré, le serveur lui envoie un message PING
+     * pour vérifier sa disponibilité et initier l'enregistrement.
+     * La fonction `PING` utilise `client_id` comme source et `args` pour un identifiant unique.
+     */
 	if (!client->isRegistered())
 	{
 		if (args.empty())
+		{
+			/* Pas d'arguments, envoie PING avec l'ID du client seul */
 			response = PING(client_id, "");
+		}
 		else
+		{
+			/* Utilise args pour un identifiant de synchronisation */
 			response = PING(client_id, args);
+		}
 	}
+
+    /**
+     * Si le client est enregistré, le serveur répond par un message PONG pour confirmer
+     * que le client est actif, avec l'ID et les arguments fournis pour la synchronisation.
+     */
 	else
 	{
 		if (args.empty())
+		{
+			/* as d'arguments, envoie PONG avec l'ID du client seul */
 			response = PONG(client_id, "");
+		}
 		else
+		{
+			/* Utilise args pour un identifiant de synchronisation */
 			response = PONG(client_id, args);
+		}
 	}
 
+    /**
+     * Envoie le message PING ou PONG construit au client via `send_message`.
+     * La réponse varie selon que le client est en cours d'enregistrement ou déjà enregistré.
+     */
 	send_message(response, client->getSocket());
+
+	/* Retourne true pour indiquer que le message a bien été envoyé */
 	return true;
 }
 
 /**
- * Retourne le client avec le pseudonyme donné, ou NULL s'il n'existe pas.
+ * Recherche et retourne un client en fonction de son pseudonyme (nickname).
+ * @param nickname : le pseudonyme du client à rechercher
+ * @return Client* : pointeur vers l'objet Client correspondant au pseudonyme donné,
+ *                   ou NULL si aucun client n'est trouvé.
  */
 Client* Server::getClientByNickname(const std::string &nickname)
 {
+    /**
+     * Parcourt la liste des clients connectés (_clients) pour trouver une correspondance.
+     * `_clients` est un vecteur contenant les pointeurs vers tous les objets Client actifs.
+     */
 	for (size_t i = 0; i < _clients.size(); ++i)
 	{
+        /**
+         * Vérifie si le pseudonyme du client courant correspond au pseudonyme recherché.
+         * Utilise la fonction `getNickname()` de l'objet Client pour accéder à son pseudonyme.
+         */
 		if (_clients[i]->getNickname() == nickname)
 			return _clients[i];
 	}
+	
+    /**
+     * Si aucun client n'est trouvé avec le pseudonyme donné, retourne NULL.
+     * Cela signifie que le pseudonyme recherché n'est pas actuellement utilisé par un client actif.
+     */
 	return NULL;
 }
 
