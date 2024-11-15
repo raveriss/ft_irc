@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/15 00:52:16 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/16 00:01:47 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1415,15 +1415,27 @@ Client* Server::getClientByNickname(const std::string &nickname)
 }
 
 /**
- * Process a Privmsg command received from a client
+ * Traite une commande envoyée par un client, en fonction du message reçu.
+ * Cette fonction interprète et route les commandes IRC standard (JOIN, NICK, PRIVMSG, etc.) vers les gestionnaires correspondants.
+ * @param client : le client qui envoie la commande
+ * @param message : le message contenant la commande et ses arguments
  */
 void Server::processCommand(Client *client, const std::string &message)
 {
-	/* Découpage de la commande et des paramètres */
+    /**
+     * Découpe le message en mots, séparant la commande des paramètres.
+     * `split` retourne un vecteur (`tokens`) contenant la commande et ses arguments.
+     */
 	std::vector<std::string> tokens = split(message, " ");
+
+	/* Si le message est vide, arrête le traitement */
 	if (tokens.empty())
 		return;
 
+    /**
+     * La première partie du message est la commande, en majuscules pour simplifier la comparaison.
+     * Cela permet de traiter les commandes sans tenir compte de la casse.
+     */
 	std::string command = tokens[0];
 	std::transform(command.begin(), command.end(), command.begin(), ::toupper);
 
@@ -1441,9 +1453,12 @@ void Server::processCommand(Client *client, const std::string &message)
 		handlePingPongCommand(client, tokens.size() > 1 ? tokens[1] : "");
 	else if (command == "PONG")
 		handlePingPongCommand(client, tokens.size() > 1 ? tokens[1] : "");
+
+    /**
+     * Si le client n'est pas encore enregistré et tente une autre commande, envoie une erreur 451.
+     */
 	else if (!client->isRegistered())
 	{
-		/* Le client doit être enregistré avant de pouvoir utiliser d'autres commandes */
 		std::string error = "451 ERR_NOTREGISTERED :You have not registered\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 	}
@@ -1461,34 +1476,66 @@ void Server::processCommand(Client *client, const std::string &message)
 		handleTopicCommand(client, tokens);
 	else if (command == "KICK")
 		handleKickCommand(client, tokens);
+
+    /**
+     * Si la commande n'est pas reconnue, envoie une erreur 421 indiquant une commande inconnue.
+     */
 	else
 	{
-		/* Commande inconnue */
 		std::string error = "421 ERR_UNKNOWNCOMMAND " + command + " :Unknown command\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 	}
 
-	/* Vérifier si le client est maintenant enregistré */
+    /**
+     * Vérifie si le client est maintenant enregistré après l'exécution de la commande.
+     * `registerClient` peut finaliser l'enregistrement si toutes les informations sont complètes.
+     */
 	registerClient(client);
 }
 
 /**
- * Enregistre le client si toutes les conditions de connexion sont remplies.
+ * Vérifie si un client remplit toutes les conditions pour être enregistré sur le serveur IRC.
+ * Si les conditions sont remplies, marque le client comme enregistré et envoie le message du jour (MOTD).
+ * @param client : le client à vérifier et enregistrer
  */
 void Server::registerClient(Client *client)
 {
+    /**
+     * Vérifie que le client n'est pas déjà enregistré et qu'il a fourni les informations nécessaires :
+     * - Le mot de passe (`hasSentPass`)
+     * - Un pseudonyme (`hasSentNick`)
+     * - Des informations utilisateur (`hasSentUser`)
+     * Si ces trois conditions sont remplies, le client est enregistré.
+     */
 	if (!client->isRegistered() && client->hasSentPass() && client->hasSentNick() && client->hasSentUser())
 	{
+        /**
+         * Marque le client comme enregistré en définissant son état interne à "registered".
+         * Cela permet au serveur de traiter ses commandes IRC au-delà de l'authentification.
+         */
 		client->setRegistered(true);
+
+        /**
+         * Envoie le Message Of The Day (MOTD) au client enregistré, contenant des informations
+         * générales ou des annonces concernant le serveur.
+         */
 		sendMotd(client);
 	}
 }
 
 /**
- * Gère la commande PASS reçue d'un client.
+ * Gère la commande PASS envoyée par un client pour s'authentifier avec un mot de passe.
+ * Valide le mot de passe fourni, envoie des erreurs appropriées en cas d'échec,
+ * et marque le client comme ayant envoyé un mot de passe valide.
+ * @param client : le client qui envoie la commande PASS
+ * @param params : vecteur contenant la commande et ses paramètres
  */
 void Server::handlePassCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si le client a déjà envoyé un mot de passe valide.
+     * Si c'est le cas, envoie une erreur 462 indiquant qu'il est interdit de se réenregistrer.
+     */
 	if (client->hasSentPass())
 	{
 		std::string error = "462 ERR_ALREADYREGISTRED :You may not reregister\r\n";
@@ -1496,6 +1543,10 @@ void Server::handlePassCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Vérifie si suffisamment de paramètres ont été fournis avec la commande PASS.
+     * Si non, envoie une erreur 461 indiquant un manque de paramètres.
+     */
 	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS PASS :Not enough parameters\r\n";
@@ -1503,8 +1554,16 @@ void Server::handlePassCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère le mot de passe fourni dans les paramètres.
+     * `params[1]` correspond au deuxième élément (après "PASS").
+     */
 	std::string password = params[1];
 
+    /**
+     * Vérifie si le mot de passe fourni correspond au mot de passe attendu par le serveur.
+     * Si non, envoie une erreur 464 indiquant un mot de passe incorrect et déconnecte le client.
+     */
 	if (password != _password)
 	{
 		std::string error = "464 ERR_PASSWDMISMATCH :Password incorrect\r\n";
@@ -1513,40 +1572,78 @@ void Server::handlePassCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Si toutes les vérifications passent, marque le client comme ayant envoyé un mot de passe valide.
+     * Cela permet au processus d'enregistrement de continuer.
+     */
 	client->setSentPass(true);
 }
 
 /**
- * Vérifie si le pseudonyme est valide.
+ * Vérifie si un pseudonyme (nickname) est valide selon les règles IRC.
+ * Règles :
+ * - Le pseudonyme ne doit pas être vide.
+ * - La longueur maximale du pseudonyme est de 9 caractères.
+ * - Le premier caractère doit être une lettre ou un caractère spécial autorisé.
+ * - Les caractères restants doivent être alphanumériques ou des caractères spéciaux autorisés.
+ * @param nickname : le pseudonyme à valider
+ * @return bool : true si le pseudonyme est valide, false sinon
  */
 bool Server::isValidNickname(const std::string &nickname)
 {
+    /**
+     * Vérifie si le pseudonyme est vide ou dépasse la limite de 9 caractères.
+     * Les pseudonymes trop longs ou absents sont immédiatement considérés comme invalides.
+     */
 	if (nickname.empty() || nickname.length() > 9)
 		return false;
 
-	/* Caractères spéciaux autorisés */
+    /**
+     * Liste des caractères spéciaux autorisés dans les pseudonymes IRC.
+     * Ces caractères sont conformes aux standards IRC pour les pseudonymes.
+     */
 	std::string specialChars = "-[]\\`^{}|";
 
-	/* Vérification du premier caractère */
+    /**
+     * Vérifie que le premier caractère est valide :
+     * - Il doit être une lettre (`std::isalpha`) ou
+     * - Un caractère spécial autorisé contenu dans `specialChars`.
+     */
 	char firstChar = nickname[0];
 	if (!std::isalpha(firstChar) && specialChars.find(firstChar) == std::string::npos)
 		return false;
 
-	/* Vérification des caractères restants */
+    /**
+     * Parcourt les caractères restants du pseudonyme pour vérifier leur validité.
+     * Chaque caractère doit être :
+     * - Une lettre ou un chiffre (`std::isalnum`),
+     * - Ou un caractère spécial autorisé.
+     */
 	for (size_t i = 1; i < nickname.length(); ++i)
 	{
 		char c = nickname[i];
 		if (!std::isalnum(c) && specialChars.find(c) == std::string::npos)
 			return false;
 	}
+
+    /**
+     * Si toutes les vérifications passent, le pseudonyme est valide.
+     */
 	return true;
 }
 
 /**
- * Process a Nick command received from a client
+ * Gère la commande NICK envoyée par un client pour définir ou changer son pseudonyme.
+ * La fonction valide le pseudonyme, vérifie qu'il n'est pas utilisé, et met à jour le pseudonyme du client.
+ * @param client : le client qui envoie la commande NICK
+ * @param params : vecteur contenant la commande et ses paramètres
  */
 void Server::handleNickCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si suffisamment de paramètres ont été fournis avec la commande NICK.
+     * Si aucun pseudonyme n'est donné, envoie une erreur 431 indiquant "No nickname given".
+     */
 	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "431 ERR_NONICKNAMEGIVEN :No nickname given\n";
@@ -1554,9 +1651,16 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère le nouveau pseudonyme proposé par le client.
+     * `params[1]` contient le pseudonyme fourni après la commande NICK.
+     */
 	std::string newNickname = params[1];
 
-	/* Validation du pseudonyme */
+    /**
+     * Valide le pseudonyme en vérifiant qu'il respecte les règles IRC (longueur, caractères valides, etc.).
+     * Si le pseudonyme est invalide, envoie une erreur 432 indiquant "Erroneous nickname".
+     */
 	if (!isValidNickname(newNickname))
 	{
 		std::string error = "432 ERR_ERRONEUSNICKNAME " + newNickname + " :Erroneous nickname\r\n";
@@ -1564,7 +1668,10 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	/* Vérifier si le pseudonyme est déjà utilisé */
+    /**
+     * Vérifie si le pseudonyme est déjà utilisé par un autre client enregistré sur le serveur.
+     * Si le pseudonyme est en cours d'utilisation, envoie une erreur 433 indiquant "Nickname is already in use".
+     */
 	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		if ((*it)->getNickname() == newNickname && *it != client)
@@ -1575,7 +1682,10 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 		}
 	}
 
-	/* Si le client est déjà enregistré, notifier les autres clients du changement de pseudonyme */
+    /**
+     * Si le client est déjà enregistré et change de pseudonyme, informe les autres clients enregistrés du changement.
+     * Le message NICK est diffusé aux autres clients pour indiquer la modification.
+     */
 	if (client->isRegistered())
 	{
 		std::string nickChangeMsg = ":" + client->getNickname() + " NICK :" + newNickname + "." + "\033[0m\r\n";
@@ -1586,41 +1696,75 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 		}
 	}
 
-	/* Mettre à jour le pseudonyme du client */
+    /**
+     * Met à jour le pseudonyme du client avec le nouveau pseudonyme validé.
+     * Le pseudonyme est stocké dans l'objet Client et mis à jour pour les interactions futures.
+     */
 	client->setNickname(newNickname);
 	std::cout << getBackgroundColorCode(client->getSocket()) 
 			<< "\nClient " << client->getSocket() 
 			<< " changed nickname to " << newNickname 
 			<< "\033[0m\033[K" << std::endl;
 			
-	/* Si le client n'était pas encore enregistré, définir le drapeau SentNick */
+    /**
+     * Si le client n'est pas encore enregistré, marque l'état SentNick comme vrai.
+     * Cela indique que le client a envoyé un pseudonyme valide et permet de continuer le processus d'enregistrement.
+     */
 	if (!client->isRegistered())
 		client->setSentNick(true);
 }
 
 /**
- * Vérifie si le nom d'utilisateur est valide.
+ * Vérifie si un nom d'utilisateur (username) est valide selon des règles définies.
+ * Règles :
+ * - Le nom d'utilisateur ne doit pas être vide.
+ * - La longueur maximale est de 10 caractères.
+ * - Chaque caractère doit être alphanumérique ou un caractère spécial autorisé ('_' ou '-').
+ * @param username : le nom d'utilisateur à valider
+ * @return bool : true si le nom d'utilisateur est valide, false sinon
  */
 bool Server::isValidUsername(const std::string &username)
 {
-	/* Limite de longueur arbitraire */
+    /**
+     * Vérifie si le nom d'utilisateur est vide ou dépasse la limite de 10 caractères.
+     * Si c'est le cas, retourne false pour indiquer un nom d'utilisateur invalide.
+     */
 	if (username.empty() || username.length() > 10) 
 		return false;
 
+    /**
+     * Parcourt chaque caractère du nom d'utilisateur pour vérifier sa validité.
+     * Chaque caractère doit être :
+     * - Une lettre ou un chiffre (`std::isalnum`),
+     * - Ou un caractère spécial autorisé ('_' ou '-').
+     * Si un caractère invalide est détecté, retourne false.
+     */
 	for (size_t i = 0; i < username.length(); ++i)
 	{
 		char c = username[i];
 		if (!std::isalnum(c) && c != '_' && c != '-')
 			return false;
 	}
+
+    /**
+     * Si toutes les vérifications passent, retourne true pour indiquer un nom d'utilisateur valide.
+     */
 	return true;
 }
 
 /**
- * Process a User command received from a client
+ * Gère la commande USER envoyée par un client pour fournir ses informations utilisateur.
+ * Valide et enregistre les informations fournies (username, hostname, servername, realname),
+ * tout en vérifiant que le client n'est pas déjà enregistré.
+ * @param client : le client qui envoie la commande USER
+ * @param params : vecteur contenant la commande et ses paramètres
  */
 void Server::handleUserCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si le client a déjà envoyé une commande USER.
+     * Si c'est le cas, envoie une erreur 462 indiquant qu'il est interdit de se réenregistrer.
+     */
 	if (client->hasSentUser())
 	{
 		std::string error = "462 ERR_ALREADYREGISTRED :You may not reregister\r\n";
@@ -1628,6 +1772,11 @@ void Server::handleUserCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Vérifie si suffisamment de paramètres ont été fournis avec la commande USER.
+     * La commande USER nécessite au moins 4 paramètres après le mot-clé "USER".
+     * Si ce n'est pas le cas, envoie une erreur 461 indiquant un manque de paramètres.
+     */
 	if (params.size() < FIVE_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS USER :Not enough parameters\r\n";
@@ -1635,12 +1784,23 @@ void Server::handleUserCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère les paramètres requis de la commande USER :
+     * - username : Identifiant unique de l'utilisateur.
+     * - hostname : Nom d'hôte de la machine utilisée par l'utilisateur.
+     * - servername : Nom du serveur auquel l'utilisateur est connecté.
+     * - realname : Nom complet ou description de l'utilisateur.
+     */
 	std::string username = params[1];
 	std::string hostname = params[2];
 	std::string servername = params[3];
 	std::string realname = params[4];
 
-	/* Si le realname est précédé de ':' et contient des espaces */
+    /**
+     * Si le realname commence par ':', supprime ce préfixe et concatène les
+     * paramètres restants pour former le nom complet. Cela permet de gérer
+     * les realnames contenant des espaces.
+     */
 	if (realname[0] == ':')
 	{
 		realname = realname.substr(1);
@@ -1650,7 +1810,10 @@ void Server::handleUserCommand(Client *client, const std::vector<std::string> &p
 		}
 	}
 
-	/* Validation du username */
+    /**
+     * Valide le username pour s'assurer qu'il respecte les règles définies (longueur, caractères valides, etc.).
+     * Si le username est invalide, envoie une erreur 432 indiquant un "Erroneous username".
+     */
 	if (!isValidUsername(username))
 	{
 		std::string error = "432 ERR_ERRONEUSNICKNAME " + username + " :Erroneous username\r\n";
@@ -1658,115 +1821,258 @@ void Server::handleUserCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	/* Définir le nom d'hôte, utiliser une valeur par défaut si nécessaire */
+    /**
+     * Si le hostname n'est pas fourni ou est vide, utilise une valeur par défaut.
+     * Cela garantit que chaque client a un hostname, même s'il n'en a pas spécifié.
+     */
 	if (hostname.empty())
 	{
 		/* Valeur par défaut si le nom d'hôte n'est pas fourni */
 		hostname = "unknown";
 	}
 
+    /**
+     * Met à jour les informations utilisateur du client dans son objet :
+     * - username : Identifiant unique de l'utilisateur.
+     * - hostname : Nom d'hôte (valeur par défaut utilisée si non fourni).
+     * - servername : Nom du serveur auquel l'utilisateur est connecté.
+     * - realname : Nom complet ou description de l'utilisateur.
+     */
 	client->setUsername(username);
 	client->setHostname(hostname);
 	client->setServername(servername);
 	client->setRealname(realname);
+
+    /**
+     * Marque le client comme ayant envoyé une commande USER valide.
+     * Cela permet au processus d'enregistrement de continuer.
+     */
 	client->setSentUser(true);
 }
 
 /**
- * Send the Message of the Day (MOTD) to a client
+ * Envoie les messages d'accueil et le MOTD (Message of the Day) à un client nouvellement enregistré.
+ * Ces messages sont standardisés par le protocole IRC et fournissent des informations sur le serveur.
+ * @param client : le client à qui envoyer les messages
  */
 void Server::sendMotd(Client *client)
 {
+    /**
+     * Récupère les informations du client :
+     * - nick : Pseudonyme du client.
+     * - username : Identifiant fourni par le client lors de la commande USER.
+     */
 	std::string nick = client->getNickname();
 	std::string username = client->getUsername();
 
-	/* 001 RPL_WELCOME */
+    /**
+     * Envoie le message d'accueil 001 (RPL_WELCOME) au client.
+     * Ce message souhaite la bienvenue et affiche des informations de connexion.
+     */
 	std::string welcome = ":" + _serverName + " 001 " + nick + " :Welcome to the Internet Relay Network " + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + "\r\n";
 	send(client->getSocket(), welcome.c_str(), welcome.length(), 0);
 
-	/* 002 RPL_YOURHOST */
+    /**
+     * Envoie le message 002 (RPL_YOURHOST), qui informe le client de l'hôte du serveur
+     * et de la version du logiciel qu'il exécute.
+     */
 	std::string yourHost = ":" + _serverName + " 002 " + nick + " :Your host is " + _serverName + ", running version 1.0\r\n";
 	send(client->getSocket(), yourHost.c_str(), yourHost.length(), 0);
 
-	/* 003 RPL_CREATED */
+    /**
+     * Envoie le message 003 (RPL_CREATED), indiquant la date de création du serveur.
+     * Ici, une date fictive est utilisée, mais cela pourrait être dynamique.
+     */
 	std::string created = ":" + _serverName + " 003 " + nick + " :This server was created at some point in the past\r\n";
 	send(client->getSocket(), created.c_str(), created.length(), 0);
 
-	/* 004 RPL_MYINFO */
+    /**
+     * Envoie le message 004 (RPL_MYINFO), qui fournit des informations
+     * supplémentaires sur le serveur, telles que les options et modes activés.
+     */
 	std::string myInfo = ":" + _serverName + " 004 " + nick + " " + _serverName + " 1.0 o o\r\n";
 	send(client->getSocket(), myInfo.c_str(), myInfo.length(), 0);
 
-	/* Envoyer le MOTD (Message of the Day) */
+    /**
+     * Envoie le message 375 (RPL_MOTDSTART), indiquant le début du Message of the Day.
+     */
 	std::string motdStart = ":" + _serverName + " 375 " + nick + " :- " + _serverName + " Message of the Day - \r\n";
 	send(client->getSocket(), motdStart.c_str(), motdStart.length(), 0);
 
+    /**
+     * Envoie le message 372 (RPL_MOTD), contenant le contenu principal du Message of the Day.
+     * Ce message peut être étendu pour inclure plusieurs lignes.
+     */
 	std::string motd = ":" + _serverName + " 372 " + nick + " :- Welcome to our IRC server!\r\n";
 	send(client->getSocket(), motd.c_str(), motd.length(), 0);
 
+    /**
+     * Envoie le message 376 (RPL_ENDOFMOTD), indiquant la fin du Message of the Day.
+     */
 	std::string motdEnd = ":" + _serverName + " 376 " + nick + " :End of /MOTD command.\r\n";
 	send(client->getSocket(), motdEnd.c_str(), motdEnd.length(), 0);
 }
 
 /**
- * Remove a client from the server
+ * Supprime un client du serveur en fermant son socket, en le retirant des structures internes,
+ * et en le marquant pour une suppression différée.
+ * @param client : le client à supprimer
  */
 void Server::removeClient(Client *client)
 {
+    /**
+     * Ferme le socket associé au client pour libérer les ressources réseau.
+     * Cela met fin à la connexion entre le serveur et ce client.
+     */
 	close(client->getSocket());
+
+    /**
+     * Supprime le descripteur du client du _masterSet utilisé pour surveiller les sockets avec `select`.
+     * FD_CLR (File Descriptor Clear) retire le socket du set.
+     */
 	FD_CLR(client->getSocket(), &_masterSet);
+
+    /**
+     * Supprime le client de la liste des clients (_clients).
+     * - std::remove réorganise la liste en déplaçant le client à la fin.
+     * - erase supprime effectivement le client de la liste.
+     */
 	_clients.erase(std::remove(_clients.begin(), _clients.end(), client), _clients.end());
 
-	/* Ajouter à la liste de suppression différée */
+    /**
+     * Ajoute le client à la liste _clientsToRemove pour une suppression différée.
+     * Cela permet de différer la destruction du client jusqu'à ce que toutes les opérations
+     * en cours soient terminées, évitant ainsi des comportements indéterminés.
+     */
 	_clientsToRemove.push_back(client);
 }
 
 /**
- * Split a string into tokens using a delimiter
+ * Divise une chaîne de caractères (`str`) en sous-chaînes (tokens) en utilisant un délimiteur (`delim`).
+ * Renvoie un vecteur contenant les sous-chaînes résultantes.
+ * @param str : La chaîne de caractères à diviser.
+ * @param delim : Le délimiteur utilisé pour séparer la chaîne.
+ * @return std::vector<std::string> : Les sous-chaînes divisées.
  */
 std::vector<std::string> Server::split(const std::string &str, const std::string &delim)
 {
+    /**
+     * Contiendra les sous-chaînes résultantes.
+     */
 	std::vector<std::string> tokens;
+
+    /**
+     * `prev` : Position de début d'une sous-chaîne à extraire.
+     * `pos` : Position de l'occurrence du délimiteur.
+     */
 	size_t prev = 0, pos = 0;
 	do
 	{
+        /**
+         * Trouve la position du prochain délimiteur.
+         * Si aucun délimiteur n'est trouvé, `find` retourne `std::string::npos`.
+         */
 		pos = str.find(delim, prev);
-		if (pos == std::string::npos) pos = str.length();
-			std::string token = str.substr(prev, pos - prev);
-		if (!token.empty()) tokens.push_back(token);
-			prev = pos + delim.length();
-	} while (pos < str.length() && prev < str.length());
+
+        /**
+         * Si aucun délimiteur n'est trouvé, positionne `pos` à la fin de la chaîne.
+         */
+		if (pos == std::string::npos)
+			pos = str.length();
+
+        /**
+         * Extrait une sous-chaîne allant de `prev` à `pos`.
+         */
+		std::string token = str.substr(prev, pos - prev);
+
+        /**
+         * Si la sous-chaîne n'est pas vide, l'ajoute au vecteur de résultats.
+         */
+		if (!token.empty())
+			tokens.push_back(token);
+
+        /**
+         * Déplace `prev` juste après le délimiteur pour préparer la prochaine itération.
+         */
+		prev = pos + delim.length();
+	}
+	/* Continue tant qu'il reste des caractères à traiter. */
+	while (pos < str.length() && prev < str.length());
+
+    /**
+     * Retourne le vecteur contenant les sous-chaînes divisées.
+     */
 	return tokens;
 }
 
+/**
+ * Envoie la liste des utilisateurs d'un canal (`NAMES` command reply) au client.
+ * Comprend les préfixes pour les opérateurs ('@') et les utilisateurs avec voix ('+').
+ * Termine par un message signalant la fin de la liste.
+ * @param client : Le client demandant la liste des noms.
+ * @param channel : Le canal pour lequel les noms sont listés.
+ */
 void Server::sendNamesReply(Client *client, Channel *channel)
 {
-	/* Construire la liste des pseudonymes */
+    /**
+     * Initialise une chaîne pour contenir la liste des pseudonymes.
+     * Cette chaîne inclura des préfixes pour les rôles spécifiques.
+     */
 	std::string nickList;
+
+    /**
+     * Récupère la liste des clients connectés à ce canal.
+     */
 	const std::vector<Client*> &clients = channel->getClients();
+
+    /**
+     * Parcourt chaque client du canal pour construire la liste des pseudonymes.
+     */
 	for (size_t i = 0; i < clients.size(); ++i)
 	{
-		/* Inclure les préfixes pour les opérateurs ('@') ou les utilisateurs avec voix ('+') */
+        /**
+         * Si le client est opérateur du canal, ajoute '@' devant son pseudonyme.
+         */
 		if (channel->isOperator(clients[i]))
 			nickList += "@";
+
+        /**
+         * Ajoute le pseudonyme du client suivi d'un espace.
+         */
 		nickList += clients[i]->getNickname() + " ";
 	}
 
-	/* RPL_NAMREPLY (353) */
+    /**
+     * RPL_NAMREPLY (353) :
+     * Envoie une réponse avec la liste des noms des utilisateurs connectés au canal.
+     */
 	std::string namesReply = ":" + _serverName + " 353 " + client->getNickname() + " = " +
 		channel->getName() + " :" + nickList + "\r\n";
 	send(client->getSocket(), namesReply.c_str(), namesReply.length(), 0);
 
-	/* RPL_ENDOFNAMES (366) */
+    /**
+     * RPL_ENDOFNAMES (366) :
+     * Informe que la liste des noms est complète.
+     */
 	std::string endOfNames = ":" + _serverName + " 366 " + client->getNickname() + " " +
 		channel->getName() + " :End of /NAMES list.\r\n";
 	send(client->getSocket(), endOfNames.c_str(), endOfNames.length(), 0);
 }
 
 /**
- * Process a Join command received from a client
+ * Gère la commande JOIN envoyée par un client pour rejoindre un canal.
+ * Si le canal n'existe pas, il est créé. Le client doit respecter les règles
+ * de mode du canal (`+i`, `+k`, `+l`) pour y accéder.
+ * @param client : Le client envoyant la commande JOIN.
+ * @param params : Les paramètres de la commande JOIN, comprenant le nom du canal
+ *                 et, éventuellement, une clé.
  */
 void Server::handleJoinCommand(Client *client, const std::vector<std::string> &params)
 {
+    /** 
+     * Vérifie si les paramètres de la commande sont suffisants (au moins un nom de canal).
+     * Renvoie une erreur sinon.
+     */
 	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS JOIN :Not enough parameters\r\n";
@@ -1774,12 +2080,18 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Récupère le nom du canal et, si présent, la clé pour y accéder.
+     */
 	std::string channelName = params[1];
 	std::string key = "";
 	if (params.size() >= 3)
 		key = params[2];
 
-	/* Vérifier que le nom du canal commence par '#' ou '&' */
+    /**
+     * Vérifie que le nom du canal est valide (commence par '#' ou '&').
+     * Renvoie une erreur si le nom est incorrect.
+     */
 	if (channelName.empty() || (channelName[0] != '#' && channelName[0] != '&'))
 	{
 		std::string error = "476 ERR_BADCHANMASK " + channelName + " :Bad Channel Mask\r\n";
@@ -1787,9 +2099,16 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /**
+     * Initialise un pointeur vers le canal. 
+     * Si le canal n'existe pas, il sera créé.
+     */
 	Channel *channel = NULL;
 
-	/* Si le canal n'existe pas, le créer */
+    /** 
+     * Crée un nouveau canal si celui-ci n'existe pas.
+     * Le client qui crée le canal devient automatiquement opérateur.
+     */
 	if (_channels.find(channelName) == _channels.end())
 	{
 		channel = new Channel(channelName);
@@ -1799,6 +2118,12 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
 	}
 	else
 	{
+        /**
+         * Le canal existe déjà. Vérifie les règles d'accès au canal :
+         * - Mode `+i` : Invitation requise.
+         * - Mode `+k` : Clé (mot de passe) requise.
+         * - Mode `+l` : Limite d'utilisateurs atteinte.
+         */
 		channel = _channels[channelName];
 
 		/* Vérifier le mode 'i' (invitation uniquement) */
@@ -1826,23 +2151,26 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
 		}
 	}
 
-	/* Ajouter le client au canal */
+    /**
+     * Ajoute le client au canal, supprime les invitations (si existantes)
+     * et informe les autres clients du canal du nouvel arrivant.
+     */
 	channel->addClient(client);
 	client->joinChannel(channel);
-
-	/* Supprimer l'invitation si elle existait */
 	channel->removeInvitation(client);
 
 	/* Notifier les autres clients du canal */
-	std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\033[0m" + "\r\n";
-	std::cout << "\nCmd Join send by " << getBackgroundColorCode(client->getSocket()) << joinMsg << "\033[0m";
+	std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\r\n";
+	std::cout << "\nCmd Join send by " << getBackgroundColorCode(client->getSocket()) << joinMsg << "\033[0m\033[K";
 	const std::vector<Client*> &channelClients = channel->getClients();
 	for (size_t i = 0; i < channelClients.size(); ++i)
 	{
 		send(channelClients[i]->getSocket(), joinMsg.c_str(), joinMsg.length(), 0);
 	}
 
-	/* Envoyer le sujet si défini (RPL_TOPIC ou RPL_NOTOPIC) */
+    /**
+     * Envoie le sujet du canal (RPL_TOPIC ou RPL_NOTOPIC) au client.
+     */
 	if (channel->hasTopic())
 	{
 		std::string topicMsg = ":" + _serverName + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
@@ -1854,15 +2182,25 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
 		send(client->getSocket(), noTopicMsg.c_str(), noTopicMsg.length(), 0);
 	}
 
-	/* Envoyer la liste des NOMS au client */
+    /**
+     * Envoie la liste des noms des membres du canal (commande NAMES).
+     */
 	sendNamesReply(client, channel);
 }
 
 /**
- * Process a Part command received from a client
+ * Gère la commande PART envoyée par un client pour quitter un canal.
+ * Notifie les autres membres du canal du départ du client. Supprime le canal
+ * si aucun client n’y reste après le départ.
+ * @param client : Le client envoyant la commande PART.
+ * @param params : Les paramètres de la commande PART, comprenant le nom du canal.
  */
 void Server::handlePartCommand(Client *client, const std::vector<std::string> &params)
 {
+    /** 
+     * Vérifie si le client a fourni suffisamment de paramètres (au moins un nom de canal).
+     * Renvoie une erreur si les paramètres sont insuffisants.
+     */
 	if (params.size() < TWO_ARGMNTS)
 	{
 		std::string error = "461 ERR_NEEDMOREPARAMS PART :Not enough parameters\r\n";
@@ -1870,9 +2208,15 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /** 
+     * Récupère le nom du canal depuis les paramètres.
+     */
 	std::string channelName = params[1];
 
-	/* Vérifier que le canal existe */
+    /**
+     * Vérifie que le canal existe dans la liste des canaux du serveur.
+     * Renvoie une erreur si le canal n'existe pas.
+     */
 	if (_channels.find(channelName) == _channels.end())
 	{
 		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
@@ -1880,9 +2224,15 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
+    /** 
+     * Récupère le canal correspondant.
+     */
 	Channel *channel = _channels[channelName];
 
-	/* Vérifier que le client est dans le canal */
+    /**
+     * Vérifie que le client est bien membre du canal.
+     * Renvoie une erreur s’il n’en est pas membre.
+     */
 	if (!channel->hasClient(client))
 	{
 		std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
@@ -1890,20 +2240,31 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
 		return;
 	}
 
-	/* Notifier les autres clients du canal */
-	std::string partMsg =  getBackgroundColorCode(client->getSocket()) + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " PART " + channelName + "\033[0m" + "\r\n";
-	std::cout << "\033[0m\nCmd PART send by " << getBackgroundColorCode(client->getSocket()) << ":" << partMsg << "\033[0m";
+    /**
+     * Prépare un message de notification indiquant que le client a quitté le canal.
+     */
+	std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + getServerIp() + " PART " + channelName + "\r\n";
+	std::cout << "\033[0m\nCmd PART send by " << getBackgroundColorCode(client->getSocket()) << ":" << partMsg << "\033[0m\033[K";
+
+	
+    /**
+     * Envoie le message à tous les membres du canal.
+     */	
 	const std::vector<Client*> &channelClients = channel->getClients();
 	for (size_t i = 0; i < channelClients.size(); ++i)
 	{
 		send(channelClients[i]->getSocket(), partMsg.c_str(), partMsg.length(), 0);
 	}
 
-	/* Retirer le client du canal */
+    /**
+     * Retire le client du canal et met à jour ses informations.
+     */
 	channel->removeClient(client);
 	client->leaveChannel(channel);
 
-	/* Si le canal est vide, le supprimer */
+    /**
+     * Si le canal est vide après le départ du client, le supprime de la liste des canaux.
+     */
 	if (channel->getClients().empty())
 	{
 		_channels.erase(channelName);
@@ -1912,10 +2273,17 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
 }
 
 /**
- * Process a Privmsg command received from a client
+ * Gère la commande PRIVMSG envoyée par un client pour transmettre un message.
+ * La commande peut cibler un canal ou un utilisateur spécifique.
+ * @param client : Le client qui envoie le message.
+ * @param params : Les paramètres de la commande PRIVMSG.
  */
 void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string> &params)
 {
+    /**
+     * Vérifie si le client a fourni suffisamment de paramètres (au moins une cible et un message).
+     * Renvoie une erreur si les paramètres sont insuffisants.
+     */
 	if (params.size() < THREE_ARGMNTS)
 	{
 		std::string error = ":" + _serverName + " 461 " + client->getNickname() + " PRIVMSG :Not enough parameters\r\n";
@@ -1923,10 +2291,15 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 		return;
 	}
 
+    /** 
+     * Récupère la cible (canal ou utilisateur) et le message depuis les paramètres.
+     */
 	std::string target = params[1];
 	std::string message = params[2];
 
-	/* Si le message commence par ':', concaténer les paramètres suivants */
+    /**
+     * Si le message commence par ':', combine les paramètres restants pour former le message complet.
+     */
 	if (message[0] == ':')
 	{
 		message = message.substr(1);
@@ -1936,7 +2309,10 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 		}
 	}
 
-	/* Détection des messages CTCP */
+    /**
+     * Vérifie si le message est un message CTCP (Client-to-Client Protocol).
+     * Les messages CTCP commencent et se terminent par le caractère '\x01'.
+     */
 	bool isCTCP = false;
 	if (!message.empty() && message[0] == '\x01' && message[message.size() - 1] == '\x01')
 	{
@@ -1945,7 +2321,9 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 		std::vector<std::string> ctcpParams = split(ctcpMessage, " ");
 		std::string ctcpCommand = ctcpParams[0];
 
-		/* Gérer la commande CTCP PING */
+        /**
+         * Gère la commande CTCP PING, en répondant au client avec un message PING.
+         */
 		if (ctcpCommand == "PING")
 		{
 			/* Répondre au CTCP PING */
@@ -1964,8 +2342,14 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 		/* Gérer d'autres commandes CTCP si nécessaire */
 	}
 
+    /**
+     * Prépare le message complet avec le format :[expéditeur] PRIVMSG [cible] :[message].
+     */
 	std::string fullMsg = ":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
 
+    /**
+     * Si la cible est un canal (nom commençant par '#' ou '&'), envoie le message à tous les membres du canal.
+     */
 	if (target[0] == '#' || target[0] == '&')
 	{
 		/* Cible est un canal */
@@ -1978,7 +2362,10 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 
 		Channel *channel = _channels[target];
 
-		/* Vérifier que le client est dans le canal */
+        /**
+         * Vérifie si le client est membre du canal.
+         * Renvoie une erreur si le client n'est pas autorisé à envoyer un message au canal.
+         */
 		if (!channel->hasClient(client))
 		{
 			std::string error = ":" + _serverName + " 404 " + client->getNickname() + " " + target + " :Cannot send to channel\r\n";
@@ -1986,7 +2373,9 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 			return;
 		}
 
-		/* Envoyer le message aux autres clients du canal */
+        /**
+         * Envoie le message à tous les membres du canal, sauf à l'expéditeur.
+         */
 		const std::vector<Client*> &channelClients = channel->getClients();
 		for (size_t i = 0; i < channelClients.size(); ++i)
 		{
@@ -1997,7 +2386,9 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 	
 	else
 	{
-		/* Cible est un utilisateur */
+        /**
+         * Si la cible est un utilisateur, cherche le client correspondant au pseudonyme cible.
+         */
 		Client *targetClient = NULL;
 		for (size_t i = 0; i < _clients.size(); ++i)
 		{
@@ -2008,7 +2399,9 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 			}
 		}
 
-		/* Vérifier si le client cible existe */
+        /**
+         * Vérifie si le client cible existe. Renvoie une erreur si le pseudonyme est invalide.
+         */
 		if (!targetClient)
 		{
 			std::string error = ":" + _serverName + " 401 " + client->getNickname() + " " + target + " :No such nick/channel\r\n";
@@ -2022,47 +2415,83 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 		
 		else
 		{
-			/* Envoyer le message au client cible */
+			/**
+			 * Envoie le message directement au client cible.
+			 * Si le message est un CTCP, le message est envoyé uniquement au destinataire.
+			 */
 			send(targetClient->getSocket(), fullMsg.c_str(), fullMsg.length(), 0);
 		}
 	}
 }
 
 /**
- * Getter 
+ * Accède au master set de descripteurs de fichiers.
+ * Le master set contient tous les descripteurs actuellement surveillés par le serveur,
+ * incluant le socket d'écoute et les sockets des clients connectés.
+ * @return Référence à _masterSet, la structure contenant les descripteurs surveillés.
  */
 fd_set& Server::getMasterSet()
 {
+    /**
+     * Renvoie une référence à _masterSet pour permettre son utilisation ou modification
+     * à l'extérieur de la classe Server.
+     */
 	return _masterSet;
 }
 
 /**
- * Get the maximum file descriptor
+ * Accède à la valeur maximale des descripteurs de fichiers surveillés par le serveur.
+ * Cette valeur est nécessaire pour la fonction `select()`, qui parcourt tous les
+ * descripteurs de fichiers actifs jusqu'à ce nombre.
+ * @return La valeur maximale des descripteurs de fichiers (_fdMax).
  */
 int Server::getFdMax() const
 {
+    /**
+     * Retourne _fdMax, le plus grand descripteur de fichier utilisé dans le serveur.
+     * _fdMax est mis à jour chaque fois qu'un nouveau descripteur est ajouté.
+     */
 	return _fdMax;
 }
 
 /**
- * Get the server name
+ * Récupère le nom du serveur IRC.
+ * @return Une référence constante à la chaîne contenant le nom du serveur (_serverName).
  */
 const std::string& Server::getServerName() const
 {
+    /**
+     * Retourne la variable membre _serverName.
+     * _serverName contient l'identifiant unique ou le nom du serveur utilisé
+     * pour l'affichage et les messages protocolaires.
+     */
 	return _serverName;
 }
 
 /**
- * Set the maximum file descriptor
+ * Met à jour le descripteur de fichier maximal suivi par le serveur.
+ * @param fd Descripteur de fichier à comparer avec _fdMax.
  */
 void Server::setFdMax(int fd)
 {
+    /**
+     * Si le nouveau descripteur (fd) est supérieur au _fdMax actuel,
+     * met à jour _fdMax avec la valeur de fd.
+     * _fdMax représente le plus grand descripteur de fichier que le serveur doit surveiller.
+     */
 	if (fd > _fdMax)
 		_fdMax = fd;
 }
 
-
+/**
+ * Retourne l'adresse IP du serveur.
+ * @return Une référence à la chaîne contenant l'adresse IP (_serverIp).
+ */
 std::string & Server::getServerIp()
 {
+    /**
+     * Renvoie une référence à la variable membre _serverIp,
+     * qui contient l'adresse IP actuelle du serveur.
+     */
 	return _serverIp;
 }

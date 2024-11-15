@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:25:46 by raveriss          #+#    #+#             */
-/*   Updated: 2024/10/31 19:21:06 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/16 00:25:47 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -159,6 +159,7 @@ class Channel
 
         /* Vérifie si le client a le statut de voix */
         bool hasVoice(const Client *client) const;
+        
 
     private:
 
