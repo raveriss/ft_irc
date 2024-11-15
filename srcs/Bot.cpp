@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:21:24 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/16 00:41:38 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/16 00:50:09 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,19 +112,23 @@ void Bot::sendWarning(Client *client, Channel *channel)
  */
 void Bot::kickClient(Client *client, Channel *channel)
 {
-    std::string kickMessage = "BOT : You have been kicked for inappropriate language.\r\n";
-    send(client->getSocket(), kickMessage.c_str(), kickMessage.length(), 0);
+    // Vérifier si le client est dans le canal
+    if (!channel->hasClient(client))
+        return;
 
-    /* Notify the channel */
-    std::string notification = client->getNickname() + " has been kicked for inappropriate language.\r\n";
+    std::string botNickname = "Bot"; // Remplacez par le pseudo de votre bot
+
+    // Formater le message de kick selon le protocole IRC
+    std::string kickMessage = ":" + botNickname + " KICK " + channel->getName() + " " + client->getNickname() + " :You have been kicked for inappropriate language.\r\n";
+
+    // Envoyer le message de kick à tous les clients du canal
     const std::vector<Client*> &channelClients = channel->getClients();
-    for (size_t i = 0; i < channelClients.size(); ++i)
+    for (std::vector<Client*>::const_iterator it = channelClients.begin(); it != channelClients.end(); ++it)
     {
-        if (channelClients[i] != client)
-            send(channelClients[i]->getSocket(), notification.c_str(), notification.length(), 0);
+        send((*it)->getSocket(), kickMessage.c_str(), kickMessage.length(), 0);
     }
 
-    /* Remove the client from the channel */
+    // Retirer le client du canal
     channel->removeClient(client);
     client->leaveChannel(channel);
 }
