@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:21:24 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/16 00:25:28 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/16 00:41:38 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,7 @@ void Bot::handleMessage(Client *client, Channel *channel, const std::string &mes
         {
             if (_warnings[client] == 0)
             {
-                sendWarning(client);
+                sendWarning(client, channel);
                 _warnings[client]++;
             }
             else
@@ -94,11 +94,18 @@ void Bot::handleMessage(Client *client, Channel *channel, const std::string &mes
 /**
  * Envoie un avertissement à un client
  */
-void Bot::sendWarning(Client *client)
+void Bot::sendWarning(Client *client, Channel *channel)
 {
-    std::string warning = "BOT : WARNING: Inappropriate language detected. Further violations will result in a kick.\r\n";
-    send(client->getSocket(), warning.c_str(), warning.length(), 0);
+    std::string warningMessage = "WARNING: Inappropriate language detected. Further violations will result in a kick.";
+    std::string message = ":" + client->getNickname() + " PRIVMSG " + channel->getName() + " :" + warningMessage + "\r\n";
+
+    const std::vector<Client*> &clients = channel->getClients();
+    for (std::vector<Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it)
+    {
+        send((*it)->getSocket(), message.c_str(), message.length(), 0);
+    }
 }
+
 
 /**
  * Expulse un client du canal

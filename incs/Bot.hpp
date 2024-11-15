@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:25:40 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/16 00:26:42 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/16 00:41:03 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ class Bot
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
 
         /* Ajoute un avertissement */
-        void sendWarning(Client *client);
+        void sendWarning(Client *client, Channel *channel);
 
         /* Exclut un client */
         void kickClient(Client *client, Channel *channel);
