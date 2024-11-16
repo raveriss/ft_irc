@@ -88,6 +88,123 @@ nc 127.0.0.1 <port>
 - **Bot IRC** : Possibilité d'ajouter un petit bot qui interagit avec les utilisateurs.
 - **Transfert de fichiers** : Support de l'envoi de fichiers entre clients.
 
+## Commandes Utiles
+### Outils de Débogage et Diagnostic
+- **Vérification des Connexions Actives sur le Port `<port>` avec `lsof` :**
+  ```bash
+  lsof -i :<port>
+  ```
+- **Forcer la Fermeture des Processus Actifs sur le Port `<port>` :**
+  ```bash
+  kill -9 $(lsof -t -i :<port>)
+  ```
+- **Fuites Mémoire et Vérification des Descripteurs Actifs pour `ircserv` (Port `6667`) via `Valgrind` :**
+  ```bash
+  valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv 6667 1912
+  ```
+### Utilisation d’Irssi
+- **Ouvrir le Fichier de Configuration d'`Irssi` avec `VS Code` :**
+  ```bash
+  code ~/.irssi/config
+  ```
+- **Se Connecter à un Serveur IRC Local sur le Port `6667` :**
+
+  Dans `bash` :
+  ```bash
+  irssi
+  ```
+  Dans `irssi` :
+  ```irssi
+  /connect 127.0.0.1 6667
+  ```
+- **Se Connecter à un Serveur IRC Local sur le Port `6667` avec le Pseudo `Raf` et le Mot de Passe `1912` :**
+
+  ```bash
+  irssi -c 127.0.0.1 -p 6667 -n Raf -w 1912
+  ```
+- **Pour Utiliser /RAWLOG OPEN ~/debug.log avec votre Serveur `IRC` :**
+
+  Dans irssi :
+  ```irssi
+  /RAWLOG OPEN ~/debug.log
+  ```
+### Gestion des Adresses IP ###
+- **Afficher les Adresses `IP` de l’Hôte :**
+
+```bash
+hostname -I
+```
+- **Afficher l’Adresse `IPv4` de l’Interface `enp3s0f0` :**
+
+```bash
+ip -o -4 addr show enp3s0f0 | awk '{print $4}' | cut -d/ -f1
+```
+  **Explication des Commandes :**
+  
+  - `ip -o -4 addr show enp3s0f0` : Affiche les informations d’adresse `IPv4` pour l’interface `enp3s0f0` en format compact.
+  - `awk '{print $4}'` : Sélectionne la colonne contenant l’adresse `IP` avec le masque de sous-réseau.
+  - `cut -d/ -f1` : Supprime le masque de sous-réseau pour ne garder que l’adresse `IP` pure (ex., `10.31.6.11`).
+- **Extraction de l’Adresse `IP` Principale :**
+
+```bash
+hostname -I | awk '{print $1}'
+```
+### Adresse `IP` pour les transferts DCC
+
+- **Observation** :
+  Votre configuration indique `hostname = "127.0.0.1"` dans les paramètres du core. L'adresse `127.0.0.1` est l'adresse de bouclage (*localhost*) et n'est pas accessible depuis d'autres machines sur le réseau.
+
+- **Solution** :
+  Définissez votre adresse `IP` externe ou locale correcte en utilisant la commande suivante dans `Irssi` :
+  ```irssi
+  /set dcc_own_ip votre.adresse.ip
+  ```
+  Remplacez votre.adresse.ip par votre adresse IP réelle sur le réseau (par exemple, 192.168.1.17).
+
+- **Résultat** : Cette commande ajoutera automatiquement l'entrée suivante dans votre fichier de configuration ~/.irssi/config :
+```
+"irc/dcc" = { dcc_own_ip = "192.168.1.17"; };
+};
+```
+
+### Envoi de fichier.
+#### Avec `irssi` :
+- **Envoyer un Fichier avec `DCC` :**
+
+```irssi
+/dcc send Pol /mnt/nfs/homes/raveriss/Desktop/Sender/test.txt
+```
+- **Recevoir un Fichier avec `DCC` :**
+
+```irssi
+/dcc get Raf test.txt
+```
+
+#### Avec `nc` :
+
+
+- **1. Sur le client expéditeur (`Raf`) :**
+
+  Ouvrez un terminal et placez-vous dans le répertoire du fichier :
+
+  ```bash
+  cd /mnt/nfs/homes/raveriss/Desktop/Sender/
+  ```
+  Lancez `netcat` en écoute sur un port dédié, par exemple `12345` :
+  ```bash
+  nc -l 12345 < test.txt
+  ```
+ 
+- **2. Sur le client récepteur (`Pol`) :**
+
+  Lancez la commande suivante pour vous connecter à `Raf` et recevoir le fichier :
+
+  ```bash
+  nc 10.31.6.11 12345 > test.txt
+  ```
+    - `10.31.6.11` : Adresse `IP` de `Raf`.
+    - `12345` : Port fourni par Raf.
+
 ## Contributeurs
 
 - raveriss - Développeur principal
