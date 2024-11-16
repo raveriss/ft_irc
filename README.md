@@ -131,24 +131,24 @@ nc 127.0.0.1 <port>
 ### Gestion des Adresses IP ###
 - **Afficher les Adresses `IP` de l’Hôte :**
 
-```bash
-hostname -I
-```
+  ```bash
+  hostname -I
+  ```
 - **Afficher l’Adresse `IPv4` de l’Interface `enp3s0f0` :**
 
-```bash
-ip -o -4 addr show enp3s0f0 | awk '{print $4}' | cut -d/ -f1
-```
-  **Explication des Commandes :**
-  
-  - `ip -o -4 addr show enp3s0f0` : Affiche les informations d’adresse `IPv4` pour l’interface `enp3s0f0` en format compact.
-  - `awk '{print $4}'` : Sélectionne la colonne contenant l’adresse `IP` avec le masque de sous-réseau.
-  - `cut -d/ -f1` : Supprime le masque de sous-réseau pour ne garder que l’adresse `IP` pure (ex., `10.31.6.11`).
+  ```bash
+  ip -o -4 addr show enp3s0f0 | awk '{print $4}' | cut -d/ -f1
+  ```
+    **Explication des Commandes :**
+    
+    - `ip -o -4 addr show enp3s0f0` : Affiche les informations d’adresse `IPv4` pour l’interface `enp3s0f0` en format compact.
+    - `awk '{print $4}'` : Sélectionne la colonne contenant l’adresse `IP` avec le masque de sous-réseau.
+    - `cut -d/ -f1` : Supprime le masque de sous-réseau pour ne garder que l’adresse `IP` pure (ex., `10.31.6.11`).
 - **Extraction de l’Adresse `IP` Principale :**
 
-```bash
-hostname -I | awk '{print $1}'
-```
+  ```bash
+  hostname -I | awk '{print $1}'
+  ```
 ### Adresse `IP` pour les transferts DCC
 
 - **Observation** :
@@ -162,23 +162,23 @@ hostname -I | awk '{print $1}'
   Remplacez votre.adresse.ip par votre adresse IP réelle sur le réseau (par exemple, 192.168.1.17).
 
 - **Résultat** : Cette commande ajoutera automatiquement l'entrée suivante dans votre fichier de configuration ~/.irssi/config :
-```
-"irc/dcc" = { dcc_own_ip = "192.168.1.17"; };
-};
-```
+  ```
+  "irc/dcc" = { dcc_own_ip = "192.168.1.17"; };
+  };
+  ```
 
 ### Envoi de fichier.
 #### Avec `irssi` :
 - **Envoyer un Fichier avec `DCC` :**
 
-```irssi
-/dcc send Pol /mnt/nfs/homes/raveriss/Desktop/Sender/test.txt
-```
+  ```irssi
+  /dcc send Pol /mnt/nfs/homes/raveriss/Desktop/Sender/test.txt
+  ```
 - **Recevoir un Fichier avec `DCC` :**
 
-```irssi
-/dcc get Raf test.txt
-```
+  ```irssi
+  /dcc get Raf test.txt
+  ```
 
 #### Avec `nc` :
 
