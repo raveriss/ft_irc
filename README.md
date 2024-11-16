@@ -203,7 +203,7 @@ nc 127.0.0.1 <port>
   nc 10.31.6.11 12345 > test.txt
   ```
     - `10.31.6.11` : Adresse `IP` de `Raf`.
-    - `12345` : Port fourni par Raf.
+    - `12345` : `Port` fourni par `Raf`.
 
 ## Contributeurs
 
