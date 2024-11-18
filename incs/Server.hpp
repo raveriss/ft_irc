@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/14 22:47:55 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/18 19:04:07 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -309,6 +309,9 @@ class Server
 
         /* Liste des clients à supprimer */
         std::vector<Client*> _clientsToRemove;
+
+        std::string formatPingPongMessage(const std::string& client_id, const std::string& command, const std::string& param);
+
 
 
 };

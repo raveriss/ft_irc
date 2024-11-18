@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/16 00:01:47 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/18 19:06:43 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1316,73 +1316,38 @@ bool Server::send_message(const std::string &message, int sender_fd)
 	return true;
 }
 
+std::string Server::formatPingPongMessage(const std::string& client_id, const std::string& command, const std::string& param)
+{
+    // Si vous souhaitez conserver les codes de couleur, vous pouvez les inclure ici
+    std::string colored_client_id = "\033[43m" + client_id + "\033[0m";
+    return colored_client_id + " " + command + " :" + param + "\r\n";
+}
+
 /**
  * Gère la commande PING/PONG pour vérifier ou répondre à la disponibilité d'un client.
- * Utilisé pour maintenir la connexion active entre le serveur et le client.
- * @param client : le client qui envoie ou reçoit la commande PING/PONG
- * @param args : arguments fournis avec la commande, comme un identifiant de synchronisation
- * @return bool : retourne true après l'envoi de la réponse au client
  */
-bool Server::handlePingPongCommand(Client *client, const std::string &args)
+bool Server::handlePingPongCommand(Client* client, const std::string& args)
 {
-    /**
-     * Crée un identifiant unique pour le client incluant son pseudonyme, son nom d'utilisateur,
-     * et l'adresse IP du serveur. Ce format est utilisé pour l'affichage et l'identification.
-     * Code couleur jaune pour l'affichage console pour faciliter le suivi.
-     */
-	std::string client_id = "\033[43m" + client->getNickname() + "!" + client->getUsername() + "@" + _serverIp + "\033[0m";
-	
-    /**
-     * Initialisation de la variable `response` pour stocker le message PING ou PONG
-     * qui sera envoyé en réponse au client.
-     */	
-	std::string response;
+    /* Création de l'ID client */
+    std::string client_id = client->getNickname() + "!" + client->getUsername() + "@" + _serverIp;
 
-    /**
-     * Si le client n'est pas encore enregistré, le serveur lui envoie un message PING
-     * pour vérifier sa disponibilité et initier l'enregistrement.
-     * La fonction `PING` utilise `client_id` comme source et `args` pour un identifiant unique.
-     */
-	if (!client->isRegistered())
-	{
-		if (args.empty())
-		{
-			/* Pas d'arguments, envoie PING avec l'ID du client seul */
-			response = PING(client_id, "");
-		}
-		else
-		{
-			/* Utilise args pour un identifiant de synchronisation */
-			response = PING(client_id, args);
-		}
-	}
+    /* Détermination de la commande (PING ou PONG) */
+    std::string command = client->isRegistered() ? "PONG" : "PING";
 
-    /**
-     * Si le client est enregistré, le serveur répond par un message PONG pour confirmer
-     * que le client est actif, avec l'ID et les arguments fournis pour la synchronisation.
-     */
-	else
-	{
-		if (args.empty())
-		{
-			/* as d'arguments, envoie PONG avec l'ID du client seul */
-			response = PONG(client_id, "");
-		}
-		else
-		{
-			/* Utilise args pour un identifiant de synchronisation */
-			response = PONG(client_id, args);
-		}
-	}
+    /* Paramètre à envoyer (utilise args si non vide) */
+    std::string param = args.empty() ? "" : args;
+
+    /* Formattage du message */
+    std::string response = formatPingPongMessage(client_id, command, param);
 
     /**
      * Envoie le message PING ou PONG construit au client via `send_message`.
      * La réponse varie selon que le client est en cours d'enregistrement ou déjà enregistré.
      */
-	send_message(response, client->getSocket());
+    send_message(response, client->getSocket());
 
 	/* Retourne true pour indiquer que le message a bien été envoyé */
-	return true;
+    return true;
 }
 
 /**
