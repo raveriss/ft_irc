@@ -205,6 +205,17 @@ nc 127.0.0.1 <port>
     - `10.31.6.11` : Adresse `IP` de `Raf`.
     - `12345` : `Port` fourni par `Raf`.
 
+
+### Navigation dans irssi
+Pour passer de l'écran d'une conversation privée à la page d'accueil d'`Irssi` (généralement appelée "fenêtre active par défaut" ou "fenêtre 1") :
+
+- Appuyez sur `Alt + 1` ou `Esc` suivi de `1` pour retourner à la fenêtre 1, qui est souvent la page d'accueil ou le canal principal.
+  
+- Appuyez sur `Alt + flèche gauche` ou `Alt + flèche droite` pour naviguer entre les fenêtres.
+Vous pouvez également utiliser `Ctrl + P` (fenêtre précédente) ou `Ctrl + N` (fenêtre suivante).
+
+- Tapez `/window goto 1` dans n'importe quelle fenêtre pour revenir à la fenêtre 1.
+
 ## Contributeurs
 
 - raveriss - Développeur principal
