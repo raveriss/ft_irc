@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 21:11:37 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/18 19:04:07 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/19 00:57:57 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 /* Inclusions pour clients, canaux et bot */
 #include "Bot.hpp"
 #include "Client.hpp"
+#include "irc_numeric_replies.hpp"
 
 /* For std::vector */
 #include <vector>

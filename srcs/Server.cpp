@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/18 19:06:43 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/19 01:06:29 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -627,7 +627,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
      */
 	if (params.size() < TWO_ARGMNTS)
 	{
-		std::string error = "461 ERR_NEEDMOREPARAMS MODE :Not enough parameters\r\n";
+		std::string error = IRCCodes::ERR_NEEDMOREPARAMS + " MODE :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -906,7 +906,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      */
 	if (!targetClient)
 	{
-		std::string error = "401 ERR_NOSUCHNICK " + targetNick + " :No such nick/channel\r\n";
+		std::string error = IRCCodes::ERR_NOSUCHNICK + targetNick + " :No such nick/channel\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1318,7 +1318,7 @@ bool Server::send_message(const std::string &message, int sender_fd)
 
 std::string Server::formatPingPongMessage(const std::string& client_id, const std::string& command, const std::string& param)
 {
-    // Si vous souhaitez conserver les codes de couleur, vous pouvez les inclure ici
+    /* Si vous souhaitez conserver les codes de couleur, vous pouvez les inclure ici */
     std::string colored_client_id = "\033[43m" + client_id + "\033[0m";
     return colored_client_id + " " + command + " :" + param + "\r\n";
 }

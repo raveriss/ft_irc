@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:21:24 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/16 00:50:09 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/19 00:14:18 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,23 +112,24 @@ void Bot::sendWarning(Client *client, Channel *channel)
  */
 void Bot::kickClient(Client *client, Channel *channel)
 {
-    // Vérifier si le client est dans le canal
+    /* Vérifier si le client est dans le canal */
     if (!channel->hasClient(client))
         return;
 
-    std::string botNickname = "Bot"; // Remplacez par le pseudo de votre bot
+    /* Remplacez par le pseudo de votre bot */
+    std::string botNickname = "Bot";
 
-    // Formater le message de kick selon le protocole IRC
+    /* Formater le message de kick selon le protocole IRC */
     std::string kickMessage = ":" + botNickname + " KICK " + channel->getName() + " " + client->getNickname() + " :You have been kicked for inappropriate language.\r\n";
 
-    // Envoyer le message de kick à tous les clients du canal
+    /* Envoyer le message de kick à tous les clients du canal */
     const std::vector<Client*> &channelClients = channel->getClients();
     for (std::vector<Client*>::const_iterator it = channelClients.begin(); it != channelClients.end(); ++it)
     {
         send((*it)->getSocket(), kickMessage.c_str(), kickMessage.length(), 0);
     }
 
-    // Retirer le client du canal
+    /* Retirer le client du canal */
     channel->removeClient(client);
     client->leaveChannel(channel);
 }
