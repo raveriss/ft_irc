@@ -6,7 +6,7 @@
 /*   By: raveriss <raveriss@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 23:07:13 by raveriss          #+#    #+#             */
-/*   Updated: 2024/11/19 01:06:29 by raveriss         ###   ########.fr       */
+/*   Updated: 2024/11/19 01:50:01 by raveriss         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -644,7 +644,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
      */
 	if (_channels.find(channelName) == _channels.end())
 	{
-		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
+		std::string error = IRCCodes::ERR_NOSUCHCHANNEL + " " + channelName + " :No such channel\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}

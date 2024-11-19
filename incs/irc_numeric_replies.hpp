@@ -25,7 +25,7 @@ namespace IRCCodes
      * 403 <channel> :No such channel\r\n
      */
     const std::string ERR_NOSUCHCHANNEL = "403";
-    const std::string ERR_NOSUCHCHANNEL_MSG = " <channel> :No such channel\r\n";
+    const std::string ERR_NOSUCHCHANNEL_MSG = " channelName :No such channel\r\n";
 
     /* ERR_CANNOTSENDTOCHAN
      * 404 <channel> :Cannot send to channel\r\n
