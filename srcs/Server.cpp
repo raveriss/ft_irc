@@ -182,7 +182,11 @@ void Server::init()
 	/* Définit l'adresse IP du serveur à INADDR_ANY */
 	serverAddr.sin_addr.s_addr = ALL_ADDR;
 
-	/* Définit le port du serveur en convertissant _port en format réseau (big-endian) avec htons (Host TO Network Short) */
+	/**
+	 * `htons` for Host TO Network Short
+	 */
+
+	/* Définit le port du serveur en convertissant _port en format réseau (big-endian) */
 	serverAddr.sin_port = htons(_port);
 
 	/*
@@ -235,7 +239,7 @@ void Server::init()
         perror("getifaddrs");
 		
 		/* Utilise l'adresse locale par défaut */
-        _serverIp = "127.0.0.1";
+        _serverIp = LOCALHOST;
     }
     else
     {
@@ -250,7 +254,7 @@ void Server::init()
                 std::string ip = inet_ntoa(addr->sin_addr);
 
 				/* Ignore l'adresse locale */
-                if (ip != "127.0.0.1")
+                if (ip != LOCALHOST)
                 {
                     _serverIp = ip;
                     break;
@@ -438,7 +442,14 @@ void Server::handleNewConnection()
      * Le descripteur fdNewClient permet d'identifier et de gérer les interactions
      * avec ce client spécifique tout au long de la session.
      */
-	Client *newClient = new Client(fdNewClient);
+    // Allocation sécurisée avec nothrow
+    Client *newClient = new (std::nothrow) Client(fdNewClient);
+    if (newClient == NULL)
+    {
+        std::cerr << "Échec de l'allocation mémoire pour le nouvel objet Client." << std::endl;
+        close(fdNewClient);
+        return;
+    }
 
     /** 
      * Définit une valeur par défaut pour le nom d'hôte, "unknown".
@@ -462,7 +473,7 @@ void Server::handleNewConnection()
 	if (host[0] != '\0')
 		newClient->setHostname(host);
 	else
-		newClient->setHostname("127.0.0.1");
+		newClient->setHostname(LOCALHOST);
 
 	/* Initialiser l'activité du client */
 	newClient->updateLastActivity();
@@ -678,7 +689,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
      */
 	if (!channel->isOperator(client))
 	{
-		std::string error = "482 ERR_CHANOPRIVSNEEDED " + channelName + " :You're not channel operator\r\n";
+    	std::string error = ":" + _serverName + " 482 " + client->getNickname() + " " + channelName + " :You're not channel operator\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -2024,6 +2035,18 @@ void Server::sendNamesReply(Client *client, Channel *channel)
 	send(client->getSocket(), endOfNames.c_str(), endOfNames.length(), 0);
 }
 
+std::vector<std::string> splitArg(const std::string &s, char delimiter)
+{
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter))
+    {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
 /**
  * Gère la commande JOIN envoyée par un client pour rejoindre un canal.
  * Si le canal n'existe pas, il est créé. Le client doit respecter les règles
@@ -2034,123 +2057,107 @@ void Server::sendNamesReply(Client *client, Channel *channel)
  */
 void Server::handleJoinCommand(Client *client, const std::vector<std::string> &params)
 {
-    /** 
-     * Vérifie si les paramètres de la commande sont suffisants (au moins un nom de canal).
-     * Renvoie une erreur sinon.
-     */
-	if (params.size() < TWO_ARGMNTS)
-	{
-		std::string error = "461 ERR_NEEDMOREPARAMS JOIN :Not enough parameters\r\n";
-		send(client->getSocket(), error.c_str(), error.length(), 0);
-		return;
-	}
+    if (params.size() < 2) // Assurez-vous que TWO_ARGMNTS = 2
+    {
+        std::string error = "461 ERR_NEEDMOREPARAMS JOIN :Not enough parameters\r\n";
+        send(client->getSocket(), error.c_str(), error.length(), 0);
+        return;
+    }
 
-    /**
-     * Récupère le nom du canal et, si présent, la clé pour y accéder.
-     */
-	std::string channelName = params[1];
-	std::string key = "";
-	if (params.size() >= 3)
-		key = params[2];
+    // Séparer les canaux et les clés par des virgules
+    std::vector<std::string> channelNames = splitArg(params[1], ',');
+    std::vector<std::string> keys;
+    if (params.size() >= 3)
+        keys = splitArg(params[2], ',');
 
-    /**
-     * Vérifie que le nom du canal est valide (commence par '#' ou '&').
-     * Renvoie une erreur si le nom est incorrect.
-     */
-	if (channelName.empty() || (channelName[0] != '#' && channelName[0] != '&'))
-	{
-		std::string error = "476 ERR_BADCHANMASK " + channelName + " :Bad Channel Mask\r\n";
-		send(client->getSocket(), error.c_str(), error.length(), 0);
-		return;
-	}
+    for (size_t i = 0; i < channelNames.size(); ++i)
+    {
+        std::string channelName = channelNames[i];
+        std::string key = "";
+        if (i < keys.size())
+            key = keys[i];
 
-    /**
-     * Initialise un pointeur vers le canal. 
-     * Si le canal n'existe pas, il sera créé.
-     */
-	Channel *channel = NULL;
+        // Valider le nom du canal
+        if (channelName.empty() || (channelName[0] != '#' && channelName[0] != '&'))
+        {
+            std::string error = "476 ERR_BADCHANMASK " + channelName + " :Bad Channel Mask\r\n";
+            send(client->getSocket(), error.c_str(), error.length(), 0);
+            continue; // Passe au canal suivant
+        }
 
-    /** 
-     * Crée un nouveau canal si celui-ci n'existe pas.
-     * Le client qui crée le canal devient automatiquement opérateur.
-     */
-	if (_channels.find(channelName) == _channels.end())
-	{
-		channel = new Channel(channelName);
-		_channels[channelName] = channel;
-		/* Le premier client à rejoindre le canal devient opérateur */
-		channel->addOperator(client);
-	}
-	else
-	{
-        /**
-         * Le canal existe déjà. Vérifie les règles d'accès au canal :
-         * - Mode `+i` : Invitation requise.
-         * - Mode `+k` : Clé (mot de passe) requise.
-         * - Mode `+l` : Limite d'utilisateurs atteinte.
-         */
-		channel = _channels[channelName];
+        // Initialiser le canal
+        Channel *channel = NULL;
 
-		/* Vérifier le mode 'i' (invitation uniquement) */
-		if (channel->hasMode('i') && !channel->isInvited(client))
-		{
-			std::string error = "473 ERR_INVITEONLYCHAN " + channelName + " :Cannot join channel (+i)\r\n";
-			send(client->getSocket(), error.c_str(), error.length(), 0);
-			return;
-		}
+        if (_channels.find(channelName) == _channels.end())
+        {
+            channel = new (std::nothrow) Channel(channelName);
+            if (channel == NULL)
+            {
+                std::cerr << "Échec de l'allocation mémoire pour le canal " << channelName << "." << std::endl;
+                continue; // Passe au canal suivant
+            }
+            _channels[channelName] = channel;
+            channel->addOperator(client);
+            // Implémenter un log ici si nécessaire
+        }
+        else
+        {
+            channel = _channels[channelName];
 
-		/* Vérifier le mode 'k' (clé du canal) */
-		if (channel->hasMode('k') && !channel->checkKey(key))
-		{
-			std::string error = "475 ERR_BADCHANNELKEY " + channelName + " :Cannot join channel (+k)\r\n";
-			send(client->getSocket(), error.c_str(), error.length(), 0);
-			return;
-		}
+            // Vérifier le mode 'i' (invitation uniquement)
+            if (channel->hasMode('i') && !channel->isInvited(client))
+            {
+                std::string error = "473 ERR_INVITEONLYCHAN " + channelName + " :Cannot join channel (+i)\r\n";
+                send(client->getSocket(), error.c_str(), error.length(), 0);
+                continue; // Passe au canal suivant
+            }
 
-		/* Vérifier le mode 'l' (limite d'utilisateurs) */
-		if (channel->isFull())
-		{
-			std::string error = "471 ERR_CHANNELISFULL " + channelName + " :Cannot join channel (+l)\r\n";
-			send(client->getSocket(), error.c_str(), error.length(), 0);
-			return;
-		}
-	}
+            // Vérifier le mode 'k' (clé du canal)
+            if (channel->hasMode('k') && !channel->checkKey(key))
+            {
+                std::string error = "475 ERR_BADCHANNELKEY " + channelName + " :Cannot join channel (+k)\r\n";
+                send(client->getSocket(), error.c_str(), error.length(), 0);
+                continue; // Passe au canal suivant
+            }
 
-    /**
-     * Ajoute le client au canal, supprime les invitations (si existantes)
-     * et informe les autres clients du canal du nouvel arrivant.
-     */
-	channel->addClient(client);
-	client->joinChannel(channel);
-	channel->removeInvitation(client);
+            // Vérifier le mode 'l' (limite d'utilisateurs)
+            if (channel->isFull())
+            {
+                std::string error = "471 ERR_CHANNELISFULL " + channelName + " :Cannot join channel (+l)\r\n";
+                send(client->getSocket(), error.c_str(), error.length(), 0);
+                continue; // Passe au canal suivant
+            }
+        }
 
-	/* Notifier les autres clients du canal */
-	std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\r\n";
-	std::cout << "\nCmd Join send by " << getBackgroundColorCode(client->getSocket()) << joinMsg << "\033[0m\033[K";
-	const std::vector<Client*> &channelClients = channel->getClients();
-	for (size_t i = 0; i < channelClients.size(); ++i)
-	{
-		send(channelClients[i]->getSocket(), joinMsg.c_str(), joinMsg.length(), 0);
-	}
+        // Ajouter le client au canal
+        channel->addClient(client);
+        client->joinChannel(channel);
+        channel->removeInvitation(client);
 
-    /**
-     * Envoie le sujet du canal (RPL_TOPIC ou RPL_NOTOPIC) au client.
-     */
-	if (channel->hasTopic())
-	{
-		std::string topicMsg = ":" + _serverName + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
-		send(client->getSocket(), topicMsg.c_str(), topicMsg.length(), 0);
-	}
-	else
-	{
-		std::string noTopicMsg = ":" + _serverName + " 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n";
-		send(client->getSocket(), noTopicMsg.c_str(), noTopicMsg.length(), 0);
-	}
+        // Notifier les autres clients dans le canal
+        std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\r\n";
+        std::cout << "\nCmd Join send by " << getBackgroundColorCode(client->getSocket()) << joinMsg << "\033[0m\033[K";
+        const std::vector<Client*> &channelClients = channel->getClients();
+        for (size_t j = 0; j < channelClients.size(); ++j)
+        {
+            send(channelClients[j]->getSocket(), joinMsg.c_str(), joinMsg.length(), 0);
+        }
 
-    /**
-     * Envoie la liste des noms des membres du canal (commande NAMES).
-     */
-	sendNamesReply(client, channel);
+        // Envoyer le sujet du canal (RPL_TOPIC ou RPL_NOTOPIC) au client
+        if (channel->hasTopic())
+        {
+            std::string topicMsg = ":" + _serverName + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
+            send(client->getSocket(), topicMsg.c_str(), topicMsg.length(), 0);
+        }
+        else
+        {
+            std::string noTopicMsg = ":" + _serverName + " 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n";
+            send(client->getSocket(), noTopicMsg.c_str(), noTopicMsg.length(), 0);
+        }
+
+        // Envoyer la liste des membres du canal (commande NAMES)
+        sendNamesReply(client, channel);
+    }
 }
 
 /**

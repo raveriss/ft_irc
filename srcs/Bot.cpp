@@ -24,7 +24,9 @@
 Bot::Bot()
 {
     /* Initialize with some default forbidden words */
-    _forbiddenWords.insert("badword2");
+    _forbiddenWords.insert("salade");
+    _forbiddenWords.insert("tomate");
+    _forbiddenWords.insert("oignon");
 }
 
 /**
@@ -69,12 +71,27 @@ bool Bot::isForbiddenWord(const std::string &word) const
  */
 void Bot::handleMessage(Client *client, Channel *channel, const std::string &message)
 {
+    /* Convertir le message en minuscule */
     std::string lowerMessage = message;
     std::transform(lowerMessage.begin(), lowerMessage.end(), lowerMessage.begin(), ::tolower);
 
-    for (std::set<std::string>::const_iterator it = _forbiddenWords.begin(); it != _forbiddenWords.end(); ++it)
+    /* Remplacer tous les caractères non alphanumériques par des espaces */
+    for (size_t i = 0; i < lowerMessage.size(); ++i)
     {
-        if (lowerMessage.find(*it) != std::string::npos)
+        if (!isalnum(lowerMessage[i]) && !isspace(lowerMessage[i]))
+        {
+            lowerMessage[i] = ' ';
+        }
+    }
+
+    /* Découper le message en mots distincts */
+    std::istringstream iss(lowerMessage);
+    std::string word;
+
+    while (iss >> word)
+    {
+        /* Si le mot figure dans la liste des mots interdits */
+        if (!word.empty() && _forbiddenWords.find(word) != _forbiddenWords.end())
         {
             if (_warnings[client] == 0)
             {
@@ -90,6 +107,10 @@ void Bot::handleMessage(Client *client, Channel *channel, const std::string &mes
         }
     }
 }
+
+
+
+
 
 /**
  * Envoie un avertissement à un client

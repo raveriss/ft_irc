@@ -25,6 +25,10 @@
 /* For std::set */
 #include <set>
 
+/* For std::istringstream */
+#include <sstream>
+
+
 /* For send() */
 #include <sys/socket.h>
 

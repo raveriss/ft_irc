@@ -135,8 +135,8 @@
 /*  Taille du tampon IRC */
 #define IRC_BUFFER_SIZE 1024
 
-#define PING(client_id, param) (client_id + "\033[43m PING :" + param + "\033[0m\r\n")
-#define PONG(client_id, param) (client_id + "\033[43m PONG :" + param + "\033[0m\r\n")
+/* Adresse de loopback (localhost) */
+#define LOCALHOST "127.0.0.1"
 
 /* Déclaration anticipée de Client */
 class Client;
