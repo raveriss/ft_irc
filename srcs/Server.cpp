@@ -638,7 +638,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
      */
 	if (params.size() < TWO_ARGMNTS)
 	{
-		std::string error = IRCCodes::ERR_NEEDMOREPARAMS + " MODE :Not enough parameters\r\n";
+		std::string error = ERR_NEEDMOREPARAMS + " MODE :Not enough parameters\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -655,7 +655,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
      */
 	if (_channels.find(channelName) == _channels.end())
 	{
-		std::string error = IRCCodes::ERR_NOSUCHCHANNEL + " " + channelName + " :No such channel\r\n";
+		std::string error = ERR_NOSUCHCHANNEL + " " + channelName + " :No such channel\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -738,7 +738,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 			{
 				if (params.size() <= paramIndex)
 				{
-					std::string error = "461 ERR_NEEDMOREPARAMS MODE :Not enough parameters for mode k\r\n";
+					std::string error = _serverName + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " MODE :Not enough parameters\r\n";
 					send(client->getSocket(), error.c_str(), error.length(), 0);
 					return;
 				}
@@ -757,7 +757,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 			{
 				if (params.size() <= paramIndex)
 				{
-					std::string error = "461 ERR_NEEDMOREPARAMS MODE :Not enough parameters for mode l\r\n";
+					std::string error = _serverName + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " MODE :Not enough parameters\r\n";
 					send(client->getSocket(), error.c_str(), error.length(), 0);
 					return;
 				}
@@ -775,7 +775,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		{
 			if (params.size() <= paramIndex)
 			{
-				std::string error = "461 ERR_NEEDMOREPARAMS MODE :Not enough parameters for mode o\r\n";
+				std::string error = _serverName + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " MODE :Not enough parameters\r\n";
 				send(client->getSocket(), error.c_str(), error.length(), 0);
 				return;
 			}
@@ -795,7 +795,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 			
 			if (!targetClient || !channel->hasClient(targetClient))
 			{
-				std::string error = "441 ERR_USERNOTINCHANNEL " + nick + " " + channelName + " :They aren't on that channel\r\n";
+				std::string error = ":" + _serverName + " " + ERR_USERNOTINCHANNEL + " " + client->getNickname() + " " + channelName + " :They aren't on that channel\r\n";
 				send(client->getSocket(), error.c_str(), error.length(), 0);
 				return;
 			}
@@ -809,7 +809,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		
 		else
 		{
-			std::string error = "472 ERR_UNKNOWNMODE " + std::string(1, modeChar) + " :is unknown mode char to me\r\n";
+			std::string error = ":" + _serverName + " " + ERR_UNKNOWNMODE + " " + client->getNickname() + " " + std::string(1, modeChar) + " :is unknown mode char to me\r\n";
 			send(client->getSocket(), error.c_str(), error.length(), 0);
 			return;
 		}
@@ -917,7 +917,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      */
 	if (!targetClient)
 	{
-		std::string error = IRCCodes::ERR_NOSUCHNICK + targetNick + " :No such nick/channel\r\n";
+		std::string error = ERR_NOSUCHNICK + targetNick + " :No such nick/channel\r\n";
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -2042,7 +2042,8 @@ std::vector<std::string> splitArg(const std::string &s, char delimiter)
     std::istringstream tokenStream(s);
     while (std::getline(tokenStream, token, delimiter))
     {
-        tokens.push_back(token);
+        if (!token.empty())
+            tokens.push_back(token);
     }
     return tokens;
 }
@@ -2085,7 +2086,7 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
             continue; // Passe au canal suivant
         }
 
-        // Initialiser le canal
+        /* Initialiser le canal */
         Channel *channel = NULL;
 
         if (_channels.find(channelName) == _channels.end())
@@ -2169,79 +2170,60 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
  */
 void Server::handlePartCommand(Client *client, const std::vector<std::string> &params)
 {
-    /** 
-     * Vérifie si le client a fourni suffisamment de paramètres (au moins un nom de canal).
-     * Renvoie une erreur si les paramètres sont insuffisants.
-     */
-	if (params.size() < TWO_ARGMNTS)
-	{
-		std::string error = "461 ERR_NEEDMOREPARAMS PART :Not enough parameters\r\n";
-		send(client->getSocket(), error.c_str(), error.length(), 0);
-		return;
-	}
+    // Vérification du nombre minimum de paramètres
+    if (params.size() < TWO_ARGMNTS)
+    {
+        std::string error = "461 ERR_NEEDMOREPARAMS PART :Not enough parameters\r\n";
+        send(client->getSocket(), error.c_str(), error.length(), 0);
+        return;
+    }
 
-    /** 
-     * Récupère le nom du canal depuis les paramètres.
-     */
-	std::string channelName = params[1];
+    // Récupération de la liste des canaux séparés par des virgules
+    std::vector<std::string> channelNames = splitArg(params[1], ',');
 
-    /**
-     * Vérifie que le canal existe dans la liste des canaux du serveur.
-     * Renvoie une erreur si le canal n'existe pas.
-     */
-	if (_channels.find(channelName) == _channels.end())
-	{
-		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
-		send(client->getSocket(), error.c_str(), error.length(), 0);
-		return;
-	}
+    for (size_t i = 0; i < channelNames.size(); ++i)
+    {
+        std::string channelName = channelNames[i];
 
-    /** 
-     * Récupère le canal correspondant.
-     */
-	Channel *channel = _channels[channelName];
+        // Vérifie que le canal existe
+        if (_channels.find(channelName) == _channels.end())
+        {
+            std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
+            send(client->getSocket(), error.c_str(), error.length(), 0);
+            continue;
+        }
 
-    /**
-     * Vérifie que le client est bien membre du canal.
-     * Renvoie une erreur s’il n’en est pas membre.
-     */
-	if (!channel->hasClient(client))
-	{
-		std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
-		send(client->getSocket(), error.c_str(), error.length(), 0);
-		return;
-	}
+        Channel *channel = _channels[channelName];
 
-    /**
-     * Prépare un message de notification indiquant que le client a quitté le canal.
-     */
-	std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + getServerIp() + " PART " + channelName + "\r\n";
-	std::cout << "\033[0m\nCmd PART send by " << getBackgroundColorCode(client->getSocket()) << ":" << partMsg << "\033[0m\033[K";
+        // Vérifie que le client est membre du canal
+        if (!channel->hasClient(client))
+        {
+            std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
+            send(client->getSocket(), error.c_str(), error.length(), 0);
+            continue;
+        }
 
-	
-    /**
-     * Envoie le message à tous les membres du canal.
-     */	
-	const std::vector<Client*> &channelClients = channel->getClients();
-	for (size_t i = 0; i < channelClients.size(); ++i)
-	{
-		send(channelClients[i]->getSocket(), partMsg.c_str(), partMsg.length(), 0);
-	}
+        // Prépare et envoie le message PART à tous les membres du canal
+        std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + getServerIp() + " PART " + channelName + "\r\n";
+        std::cout << "\033[0m\nCmd PART send by " << getBackgroundColorCode(client->getSocket()) << ":" << partMsg << "\033[0m\033[K";
 
-    /**
-     * Retire le client du canal et met à jour ses informations.
-     */
-	channel->removeClient(client);
-	client->leaveChannel(channel);
+        const std::vector<Client*> &channelClients = channel->getClients();
+        for (size_t j = 0; j < channelClients.size(); ++j)
+        {
+            send(channelClients[j]->getSocket(), partMsg.c_str(), partMsg.length(), 0);
+        }
 
-    /**
-     * Si le canal est vide après le départ du client, le supprime de la liste des canaux.
-     */
-	if (channel->getClients().empty())
-	{
-		_channels.erase(channelName);
-		delete channel;
-	}
+        // Retire le client du canal
+        channel->removeClient(client);
+        client->leaveChannel(channel);
+
+        // Supprime le canal si vide
+        if (channel->getClients().empty())
+        {
+            _channels.erase(channelName);
+            delete channel;
+        }
+    }
 }
 
 /**
