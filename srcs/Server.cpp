@@ -638,7 +638,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
      */
 	if (params.size() < TWO_ARGMNTS)
 	{
-		std::string error = ERR_NEEDMOREPARAMS + " MODE :Not enough parameters\r\n";
+        std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "MODE");
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -655,7 +655,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
      */
 	if (_channels.find(channelName) == _channels.end())
 	{
-		std::string error = ERR_NOSUCHCHANNEL + " " + channelName + " :No such channel\r\n";
+		std::string error = IrcMessageBuilder::buildNoSuchChannelError(_serverName, channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -678,7 +678,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		if (channel->hasMode('t')) modes += "t";
 		if (channel->hasMode('k')) modes += "k";
 		if (channel->hasMode('l')) modes += "l";
-		std::string response = "324 " + client->getNickname() + " " + channelName + " " + modes + "\r\n";
+		std::string response = RPL_CHANNELMODEIS + client->getNickname() + " " + channelName + " " + modes + "\r\n";
 		send(client->getSocket(), response.c_str(), response.length(), 0);
 		return;
 	}
@@ -689,7 +689,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
      */
 	if (!channel->isOperator(client))
 	{
-    	std::string error = ":" + _serverName + " 482 " + client->getNickname() + " " + channelName + " :You're not channel operator\r\n";
+		std::string error = IrcMessageBuilder::buildChannelOperatorNeededError(_serverName, client->getNickname(), channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -738,7 +738,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 			{
 				if (params.size() <= paramIndex)
 				{
-					std::string error = _serverName + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " MODE :Not enough parameters\r\n";
+        			std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "MODE");
 					send(client->getSocket(), error.c_str(), error.length(), 0);
 					return;
 				}
@@ -757,7 +757,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 			{
 				if (params.size() <= paramIndex)
 				{
-					std::string error = _serverName + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " MODE :Not enough parameters\r\n";
+        			std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "MODE");
 					send(client->getSocket(), error.c_str(), error.length(), 0);
 					return;
 				}
@@ -775,7 +775,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		{
 			if (params.size() <= paramIndex)
 			{
-				std::string error = _serverName + ERR_NEEDMOREPARAMS + " " + client->getNickname() + " MODE :Not enough parameters\r\n";
+        		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "MODE");
 				send(client->getSocket(), error.c_str(), error.length(), 0);
 				return;
 			}
@@ -795,7 +795,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 			
 			if (!targetClient || !channel->hasClient(targetClient))
 			{
-				std::string error = ":" + _serverName + " " + ERR_USERNOTINCHANNEL + " " + client->getNickname() + " " + channelName + " :They aren't on that channel\r\n";
+				std::string error = IrcMessageBuilder::buildUserNotInChannelError(_serverName, client->getNickname(), channelName);
 				send(client->getSocket(), error.c_str(), error.length(), 0);
 				return;
 			}
@@ -809,7 +809,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 		
 		else
 		{
-			std::string error = ":" + _serverName + " " + ERR_UNKNOWNMODE + " " + client->getNickname() + " " + std::string(1, modeChar) + " :is unknown mode char to me\r\n";
+			std::string error = IrcMessageBuilder::buildUnknownModeError(_serverName, client->getNickname(), modeChar);
 			send(client->getSocket(), error.c_str(), error.length(), 0);
 			return;
 		}
@@ -818,7 +818,7 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
     /**
      * Envoie une notification aux membres du canal indiquant les changements de mode.
      */
-	std::string modeChangeMsg = ":" + client->getNickname() + " MODE " + channelName + " " + modeString;
+	std::string modeChangeMsg = IrcMessageBuilder::buildModeChangeMessage(client->getNickname(), channelName, modeString);
 	for (size_t i = 3; i < paramIndex; ++i)
 	{
 		modeChangeMsg += " " + params[i];
@@ -847,7 +847,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      */
 	if (params.size() < THREE_ARGMNTS)
 	{
-		std::string error = "461 ERR_NEEDMOREPARAMS INVITE :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "INVITE");
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -865,7 +865,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      */
 	if (_channels.find(channelName) == _channels.end())
 	{
-		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
+		std::string error = IrcMessageBuilder::buildNoSuchChannelError(_serverName, channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -881,7 +881,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      */
 	if (!channel->hasClient(client))
 	{
-		std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
+		std::string error = IrcMessageBuilder::buildNotOnChannelError(_serverName, channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -893,7 +893,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      */
 	if (channel->hasMode('i') && !channel->isOperator(client))
 	{
-		std::string error = "482 ERR_CHANOPRIVSNEEDED " + channelName + " :You're not channel operator\r\n";
+		std::string error = IrcMessageBuilder::buildChannelOperatorNeededError(_serverName, client->getNickname(), channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -917,7 +917,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      */
 	if (!targetClient)
 	{
-		std::string error = ERR_NOSUCHNICK + targetNick + " :No such nick/channel\r\n";
+		std::string error = IrcMessageBuilder::buildNoSuchNickError(_serverName, targetNick);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -928,7 +928,7 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      */
 	if (channel->hasClient(targetClient))
 	{
-		std::string error = "443 ERR_USERONCHANNEL " + targetNick + " " + channelName + " :is already on channel\r\n";
+		std::string error = IrcMessageBuilder::buildUserOnChannelError(_serverName, targetNick, channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -943,14 +943,14 @@ void Server::handleInviteCommand(Client *client, const std::vector<std::string> 
      * Envoie un message d'invitation au client cible pour l'informer de l'invitation.
      * Le client cible voit un message indiquant qu'il a été invité à rejoindre le canal.
      */
-	std::string inviteMsg = ":" + client->getNickname() + " INVITE " + targetNick + " :" + channelName + "\r\n";
+	std::string inviteMsg = IrcMessageBuilder::buildInviteMessage(client->getNickname(), targetNick, channelName);
 	send(targetClient->getSocket(), inviteMsg.c_str(), inviteMsg.length(), 0);
 
     /**
      * Confirme au client qui a envoyé l'invitation que celle-ci a été envoyée avec succès.
      * Le client qui invite voit une réponse 341 confirmant l'envoi de l'invitation.
      */
-	std::string reply = "341 " + client->getNickname() + " " + targetNick + " :" + channelName + "\r\n";
+	std::string reply = IrcMessageBuilder::buildInvitingReply(_serverName, client->getNickname(), targetNick, channelName);
 	send(client->getSocket(), reply.c_str(), reply.length(), 0);
 }
 
@@ -969,7 +969,7 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
      */
 	if (params.size() < TWO_ARGMNTS)
 	{
-		std::string error = "461 ERR_NEEDMOREPARAMS TOPIC :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "TOPIC");
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -986,7 +986,7 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
      */
 	if (_channels.find(channelName) == _channels.end())
 	{
-		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
+		std::string error = IrcMessageBuilder::buildNoSuchChannelError(_serverName, channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1002,7 +1002,7 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
      */
 	if (!channel->hasClient(client))
 	{
-		std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
+		std::string error = IrcMessageBuilder::buildNotOnChannelError(_serverName, channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		
 		return;
@@ -1017,13 +1017,13 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
 	{
 		if (channel->hasTopic())
 		{
-			std::string response = "332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
+			std::string response = IrcMessageBuilder::buildTopicReply(_serverName, client->getNickname(), channelName, channel->getTopic());
 			send(client->getSocket(), response.c_str(), response.length(), 0);
 		}
 		
 		else
 		{
-			std::string response = "331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n";
+			std::string response = IrcMessageBuilder::buildNoTopicReply(_serverName, client->getNickname(), channelName);
 			send(client->getSocket(), response.c_str(), response.length(), 0);
 		}
 		return;
@@ -1035,7 +1035,7 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
      */
 	if (channel->hasMode('t') && !channel->isOperator(client))
 	{
-		std::string error = "482 ERR_CHANOPRIVSNEEDED " + channelName + " :You're not channel operator\r\n";
+		std::string error = IrcMessageBuilder::buildChannelOperatorNeededError(_serverName, client->getNickname(), channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1061,7 +1061,7 @@ void Server::handleTopicCommand(Client *client, const std::vector<std::string> &
      * Notifie tous les membres du canal que le sujet a été modifié.
      * Envoie un message indiquant le changement de sujet pour chaque membre.
      */
-	std::string topicMsg = ":" + client->getNickname() + " TOPIC " + channelName + " :" + topic + "\r\n";
+	std::string topicMsg = IrcMessageBuilder::buildTopicMessage(client->getNickname(), channelName, topic);
 	const std::vector<Client*> &channelClients = channel->getClients();
 	for (size_t i = 0; i < channelClients.size(); ++i)
 	{
@@ -1083,7 +1083,7 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (params.size() < THREE_ARGMNTS)
 	{
-		std::string error = "461 ERR_NEEDMOREPARAMS KICK :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "KICK");
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1117,7 +1117,7 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (_channels.find(channelName) == _channels.end())
 	{
-		std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
+		std::string error = IrcMessageBuilder::buildNoSuchChannelError(_serverName, channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1133,7 +1133,7 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (!channel->hasClient(client))
 	{
-		std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
+		std::string error = IrcMessageBuilder::buildNotOnChannelError(_serverName, channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1145,7 +1145,7 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (!channel->isOperator(client))
 	{
-		std::string error = "482 ERR_CHANOPRIVSNEEDED " + channelName + " :You're not channel operator\r\n";
+		std::string error = IrcMessageBuilder::buildChannelOperatorNeededError(_serverName, client->getNickname(), channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1169,7 +1169,7 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (!targetClient)
 	{
-		std::string error = "401 ERR_NOSUCHNICK " + targetNick + " :No such nick/channel\r\n";
+		std::string error = IrcMessageBuilder::buildNoSuchNickError(_serverName, targetNick);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1180,7 +1180,7 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (!channel->hasClient(targetClient))
 	{
-		std::string error = "441 ERR_USERNOTINCHANNEL " + targetNick + " " + channelName + " :They aren't on that channel\r\n";
+		std::string error = IrcMessageBuilder::buildUserNotInChannelError(_serverName, client->getNickname(), channelName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1189,7 +1189,7 @@ void Server::handleKickCommand(Client *client, const std::vector<std::string> &p
      * Notifie tous les membres du canal que le client cible est expulsé,
      * en envoyant un message indiquant l'auteur de l'expulsion et la raison.
      */
-	std::string kickMsg = ":" + client->getNickname() + " KICK " + channelName + " " + targetNick + " :" + comment + "\r\n";
+	std::string kickMsg = IrcMessageBuilder::buildKickMessage(client->getNickname(), channelName, targetNick, comment);
 	const std::vector<Client*> &channelClients = channel->getClients();
 	for (size_t i = 0; i < channelClients.size(); ++i)
 	{
@@ -1229,7 +1229,8 @@ void Server::handleCapCommand(Client *client, const std::vector<std::string> &pa
 	{
 		/* Si le client est enregistré, utilise son pseudonyme ; sinon, utilise "*" */
 		std::string nick = client->isRegistered() ? client->getNickname() : "*";
-		std::string error = ":" + _serverName + " 461 " + nick + " CAP :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "CAP");
+		
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1262,7 +1263,7 @@ void Server::handleCapCommand(Client *client, const std::vector<std::string> &pa
 		std::string nick = client->isRegistered() ? client->getNickname() : "*";
 
 		/* Forme et envoie la réponse avec la liste des capacités supportées (ici vide) */
-		std::string response = ":" + _serverName + " CAP " + nick + " LS :" + capabilities + "\r\n";
+		std::string response = IrcMessageBuilder::buildCapabilityListMessage(_serverName, nick, capabilities);
 		send(client->getSocket(), response.c_str(), response.length(), 0);
 	}
 
@@ -1283,7 +1284,7 @@ void Server::handleCapCommand(Client *client, const std::vector<std::string> &pa
 	{
 		/* Utilise le pseudonyme enregistré ou "*" pour identifier le client dans l'erreur */
 		std::string nick = client->isRegistered() ? client->getNickname() : "*";
-		std::string error = ":" + _serverName + " 410 " + nick + " " + subCommand + " :Invalid CAP subcommand\r\n";
+		std::string error = IrcMessageBuilder::buildInvalidCapSubcommandError(_serverName, nick, subCommand);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 	}
 }
@@ -1435,7 +1436,7 @@ void Server::processCommand(Client *client, const std::string &message)
      */
 	else if (!client->isRegistered())
 	{
-		std::string error = "451 ERR_NOTREGISTERED :You have not registered\r\n";
+		std::string error = IrcMessageBuilder::buildNotRegisteredError(_serverName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 	}
 	else if (command == "JOIN")
@@ -1458,7 +1459,7 @@ void Server::processCommand(Client *client, const std::string &message)
      */
 	else
 	{
-		std::string error = "421 ERR_UNKNOWNCOMMAND " + command + " :Unknown command\r\n";
+		std::string error = IrcMessageBuilder::buildUnknownCommandError(_serverName, command);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 	}
 
@@ -1514,7 +1515,7 @@ void Server::handlePassCommand(Client *client, const std::vector<std::string> &p
      */
 	if (client->hasSentPass())
 	{
-		std::string error = "462 ERR_ALREADYREGISTRED :You may not reregister\r\n";
+		std::string error = IrcMessageBuilder::buildAlreadyRegisteredError(_serverName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1525,7 +1526,7 @@ void Server::handlePassCommand(Client *client, const std::vector<std::string> &p
      */
 	if (params.size() < TWO_ARGMNTS)
 	{
-		std::string error = "461 ERR_NEEDMOREPARAMS PASS :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "PASS");
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1542,7 +1543,7 @@ void Server::handlePassCommand(Client *client, const std::vector<std::string> &p
      */
 	if (password != _password)
 	{
-		std::string error = "464 ERR_PASSWDMISMATCH :Password incorrect\r\n";
+		std::string error = IrcMessageBuilder::buildPasswordMismatchError(_serverName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		removeClient(client);
 		return;
@@ -1622,7 +1623,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (params.size() < TWO_ARGMNTS)
 	{
-		std::string error = "431 ERR_NONICKNAMEGIVEN :No nickname given\n";
+		std::string error = IrcMessageBuilder::buildNoNicknameGivenError(_serverName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1639,7 +1640,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (!isValidNickname(newNickname))
 	{
-		std::string error = "432 ERR_ERRONEUSNICKNAME " + newNickname + " :Erroneous nickname\r\n";
+		std::string error = IrcMessageBuilder::buildErroneousNicknameError(_serverName, newNickname);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1652,7 +1653,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
 	{
 		if ((*it)->getNickname() == newNickname && *it != client)
 		{
-			std::string error = "433 ERR_NICKNAMEINUSE " + newNickname + " :Nickname is already in use\r\n";
+			std::string error = IrcMessageBuilder::buildNicknameInUseError(_serverName, newNickname);
 			send(client->getSocket(), error.c_str(), error.length(), 0);
 			return;
 		}
@@ -1664,7 +1665,7 @@ void Server::handleNickCommand(Client *client, const std::vector<std::string> &p
      */
 	if (client->isRegistered())
 	{
-		std::string nickChangeMsg = ":" + client->getNickname() + " NICK :" + newNickname + "." + "\033[0m\r\n";
+		std::string nickChangeMsg = IrcMessageBuilder::buildNickChangeMessage(client->getNickname(), newNickname);
 		for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 		{
 			if (*it != client && (*it)->isRegistered())
@@ -1743,7 +1744,7 @@ void Server::handleUserCommand(Client *client, const std::vector<std::string> &p
      */
 	if (client->hasSentUser())
 	{
-		std::string error = "462 ERR_ALREADYREGISTRED :You may not reregister\r\n";
+		std::string error = IrcMessageBuilder::buildAlreadyRegisteredError(_serverName);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1755,7 +1756,7 @@ void Server::handleUserCommand(Client *client, const std::vector<std::string> &p
      */
 	if (params.size() < FIVE_ARGMNTS)
 	{
-		std::string error = "461 ERR_NEEDMOREPARAMS USER :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "USER");
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1792,7 +1793,7 @@ void Server::handleUserCommand(Client *client, const std::vector<std::string> &p
      */
 	if (!isValidUsername(username))
 	{
-		std::string error = "432 ERR_ERRONEUSNICKNAME " + username + " :Erroneous username\r\n";
+		std::string error = IrcMessageBuilder::buildErroneousUsernameError(_serverName, username);
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}
@@ -1845,7 +1846,7 @@ void Server::sendMotd(Client *client)
      * Envoie le message d'accueil 001 (RPL_WELCOME) au client.
      * Ce message souhaite la bienvenue et affiche des informations de connexion.
      */
-	std::string welcome = ":" + _serverName + " 001 " + nick + " :Welcome to the Internet Relay Network " + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + "\r\n";
+	std::string welcome = IrcMessageBuilder::buildWelcomeMessage(_serverName, nick, client->getRealname(), getServerIp());
 	send(client->getSocket(), welcome.c_str(), welcome.length(), 0);
 
     /**
@@ -2060,7 +2061,7 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
 {
     if (params.size() < 2) // Assurez-vous que TWO_ARGMNTS = 2
     {
-        std::string error = "461 ERR_NEEDMOREPARAMS JOIN :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "JOIN");
         send(client->getSocket(), error.c_str(), error.length(), 0);
         return;
     }
@@ -2173,7 +2174,7 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
     // Vérification du nombre minimum de paramètres
     if (params.size() < TWO_ARGMNTS)
     {
-        std::string error = "461 ERR_NEEDMOREPARAMS PART :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "PART");
         send(client->getSocket(), error.c_str(), error.length(), 0);
         return;
     }
@@ -2188,7 +2189,7 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
         // Vérifie que le canal existe
         if (_channels.find(channelName) == _channels.end())
         {
-            std::string error = "403 ERR_NOSUCHCHANNEL " + channelName + " :No such channel\r\n";
+            std::string error = IrcMessageBuilder::buildNoSuchChannelError(_serverName, channelName);
             send(client->getSocket(), error.c_str(), error.length(), 0);
             continue;
         }
@@ -2198,7 +2199,7 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
         // Vérifie que le client est membre du canal
         if (!channel->hasClient(client))
         {
-            std::string error = "442 ERR_NOTONCHANNEL " + channelName + " :You're not on that channel\r\n";
+            std::string error = IrcMessageBuilder::buildNotOnChannelError(_serverName, channelName);
             send(client->getSocket(), error.c_str(), error.length(), 0);
             continue;
         }
@@ -2240,7 +2241,7 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
      */
 	if (params.size() < THREE_ARGMNTS)
 	{
-		std::string error = ":" + _serverName + " 461 " + client->getNickname() + " PRIVMSG :Not enough parameters\r\n";
+		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "PRIVMSG");
 		send(client->getSocket(), error.c_str(), error.length(), 0);
 		return;
 	}

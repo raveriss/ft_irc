@@ -16,7 +16,8 @@
 /* Inclusions pour clients, canaux et bot */
 #include "Bot.hpp"
 #include "Client.hpp"
-#include "irc_numeric_replies.hpp"
+#include "IrcNumericReplies.hpp"
+#include "IrcMessageBuilder.hpp"
 
 /* For std::vector */
 #include <vector>
