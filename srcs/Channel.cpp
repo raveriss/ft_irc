@@ -254,3 +254,8 @@ bool Channel::hasVoice(const Client *client) const
 {
     return _voicedClients.find(const_cast<Client*>(client)) != _voicedClients.end();
 }
+
+const std::string & Channel::getKey() const
+{
+    return _key;
+}

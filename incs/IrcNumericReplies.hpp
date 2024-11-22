@@ -6,7 +6,31 @@
 /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
 /*                                ERROR CODES                                */
 /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
-    
+
+/**
+ * RPL_WELCOME : "001 :Welcome to the Internet Relay Network nickname!realName@host\r\n"
+ */
+const std::string RPL_WELCOME = " 001 ";
+const std::string RPL_WELCOME_MSG = " :Welcome to the Internet Relay Network nickname!realName@host\r\n";
+
+/**
+ * RPL_YOURHOST : "002 :Your host is serverName, running version serverVersion\r\n"
+ */
+const std::string RPL_YOURHOST = " 002 ";
+const std::string RPL_YOURHOST_MSG = " :Your host is serverName, running version serverVersion\r\n";
+
+/**
+ * RPL_CREATED : "003 :This server was created at some point in the past\r\n"
+ */
+const std::string RPL_CREATED = " 003 ";
+const std::string RPL_CREATED_MSG = " :This server was created at some point in the past\r\n";
+
+/**
+ * RPL_MYINFO : "004 serverName 1.0 o o\r\n"
+ */
+const std::string RPL_MYINFO = " 004 ";
+const std::string RPL_MYINFO_MSG = " serverName 1.0 o o\r\n";
+
 /* ERR_NOSUCHNICK
     * 401 <nickname> :No such nick/channel\r\n
     */

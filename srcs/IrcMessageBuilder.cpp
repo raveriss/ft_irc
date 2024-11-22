@@ -23,7 +23,7 @@ std::string IrcMessageBuilder::buildErrorMessage(const std::string& serverName, 
 
 std::string IrcMessageBuilder::buildWelcomeMessage(const std::string& serverName, const std::string& nickname, const std::string& realName, const std::string& host) {
     std::ostringstream oss;
-    oss << ":" << serverName << " 001 " << nickname 
+    oss << ":" << serverName << RPL_WELCOME << nickname 
         << " :Welcome to the Internet Relay Network " 
         << nickname << "!" << realName << "@" << host;
     return truncateAndAppend(oss.str());
@@ -248,5 +248,162 @@ std::string IrcMessageBuilder::buildNickChangeMessage(const std::string& current
 std::string IrcMessageBuilder::buildErroneousUsernameError(const std::string& serverName, const std::string& username) {
     std::ostringstream oss;
     oss << ":" << serverName << ERR_ERRONEUSUSERNAME << username << " :Erroneous username";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * MSG HOST : "nickname HOST :serverName version\r\n"
+ */
+std::string IrcMessageBuilder::buildYourHostMessage(const std::string& serverName, const std::string& nick, const std::string& serverVersion) {
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_YOURHOST << nick 
+        << " :Your host is " << serverName << ", running version " << serverVersion;
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * RPL_CREATED : "003 :This server was created at some point in the past\r\n"
+ */
+std::string IrcMessageBuilder::buildServerCreatedMessage(const std::string& serverName, const std::string& nick, const std::string& creationDate) {
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_CREATED << nick 
+        << " :This server was created " << creationDate;
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * RPL_MYINFO : "004 serverName 1.0 o o\r\n"
+ */
+std::string IrcMessageBuilder::buildMyInfoMessage(const std::string& serverName, const std::string& nick, const std::string& version, const std::string& userModes, const std::string& channelModes) {
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_MYINFO << nick << " " << serverName << " " << version 
+        << " " << userModes << " " << channelModes;
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * RPL_MOTDSTART : "375 nick :- serverName Message of the Day -\r\n"
+ */
+std::string IrcMessageBuilder::buildMotdStartMessage(const std::string& serverName, const std::string& nick) {
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_MOTDSTART << nick << " :- " << serverName << " Message of the Day -";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * RPL_MOTD : "372 nick :- Welcome to our IRC server!\r\n"
+ */
+std::string IrcMessageBuilder::buildMotdMessage(const std::string& serverName, const std::string& nick, const std::string& message) {
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_MOTD << nick << " :- " << message;
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * RPL_ENDOFMOTD : "376 nick :End of /MOTD command.\r\n"
+ */
+std::string IrcMessageBuilder::buildMotdEndMessage(const std::string& serverName, const std::string& nick) {
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_ENDOFMOTD << nick << " :End of /MOTD command.";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * RPL_NAMREPLY : "353 nick = channelName :nickList\r\n"
+ */
+std::string IrcMessageBuilder::buildNamesReply(const std::string& serverName, const std::string& nick, const std::string& channelName, const std::string& nickList) {
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_NAMREPLY << nick << " = " << channelName << " :" << nickList;
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * RPL_ENDOFNAMES : "366 nick channelName :End of /NAMES list\r\n"
+ */
+std::string IrcMessageBuilder::buildEndOfNamesMessage(const std::string& serverName, const std::string& nick, const std::string& channelName) {
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_ENDOFNAMES << nick << " " << channelName << " :End of /NAMES list.";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * ERR_BADCHANMASK : "476 channelName :Bad Channel Mask\r\n"
+ */
+std::string IrcMessageBuilder::buildBadChannelMaskError(const std::string& serverName, const std::string& channelName) {
+    std::ostringstream oss;
+    oss << ":" << serverName << ERR_BADCHANMASK << channelName << " :Bad Channel Mask";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * ERR_INVITEONLYCHAN : "473 channelName :Cannot join channel (+i)\r\n"
+ */
+std::string IrcMessageBuilder::buildInviteOnlyChannelError(const std::string& serverName, const std::string& channelName) {
+    std::ostringstream oss;
+    oss << ":" << serverName << ERR_INVITEONLYCHAN << channelName << " :Cannot join channel (+i)";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * ERR_BADCHANNELKEY : "475 channelName :Cannot join channel (+k)\r\n"
+ */
+std::string IrcMessageBuilder::buildBadChannelKeyError(const std::string& serverName, const std::string& channelName) {
+    std::ostringstream oss;
+    oss << ":" << serverName << ERR_BADCHANNELKEY << channelName << " :Cannot join channel (+k)";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * ERR_CHANNELISFULL : "471 channelName :Cannot join channel (+l)\r\n"
+ */
+std::string IrcMessageBuilder::buildChannelIsFullError(const std::string& serverName, const std::string& channelName) {
+    std::ostringstream oss;
+    oss << ":" << serverName << ERR_CHANNELISFULL << channelName << " :Cannot join channel (+l)";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * MSG JOIN : "nickname JOIN :channelName\r\n"
+ */
+std::string IrcMessageBuilder::buildJoinMessage(const std::string& nickname, const std::string& realname, const std::string& serverIp, const std::string& channelName) {
+    std::ostringstream oss;
+    oss << ":" << nickname << "!" << realname << "@" << serverIp << " JOIN :" << channelName;
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * MSG PART : "nickname PART :channelName\r\n"
+ */
+std::string IrcMessageBuilder::buildPartMessage(const std::string& nickname, const std::string& username, const std::string& serverIp, const std::string& channelName) {
+    std::ostringstream oss;
+    oss << ":" << nickname << "!" << username << "@" << serverIp << " PART " << channelName;
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * ERR_CANNOTSENDTOCHAN : "serverName 404 nickname channelName :Cannot send to channel\r\n"
+ */
+std::string IrcMessageBuilder::buildCannotSendToChannelError(const std::string& serverName, const std::string& nickname, const std::string& target) {
+    std::ostringstream oss;
+    oss << ":" << serverName << ERR_CANNOTSENDTOCHAN << nickname << " " << target << " :Cannot send to channel";
+    return truncateAndAppend(oss.str());
+}
+
+/**
+ * RPL_CHANNELMODEIS : "324 nickname channelName modes [modeParams]\r\n"
+ */
+std::string IrcMessageBuilder::buildChannelModeIsResponse(
+    const std::string& serverName,
+    const std::string& nickname,
+    const std::string& channelName,
+    const std::string& modes,
+    const std::string& modeParams
+)
+{
+    std::ostringstream oss;
+    oss << ":" << serverName << RPL_CHANNELMODEIS << nickname << " " << channelName << " " << modes;
+    if (!modeParams.empty()) {
+        oss << " " << modeParams;
+    }
     return truncateAndAppend(oss.str());
 }

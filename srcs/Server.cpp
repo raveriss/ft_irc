@@ -442,7 +442,7 @@ void Server::handleNewConnection()
      * Le descripteur fdNewClient permet d'identifier et de gérer les interactions
      * avec ce client spécifique tout au long de la session.
      */
-    // Allocation sécurisée avec nothrow
+    /* Allocation sécurisée avec nothrow */
     Client *newClient = new (std::nothrow) Client(fdNewClient);
     if (newClient == NULL)
     {
@@ -673,12 +673,25 @@ void Server::handleModeCommand(Client *client, const std::vector<std::string> &p
 	if (params.size() == TWO_ARGMNTS)
 	{
 		std::string modes = "+";
+		std::string modeParams;
 		
 		if (channel->hasMode('i')) modes += "i";
 		if (channel->hasMode('t')) modes += "t";
-		if (channel->hasMode('k')) modes += "k";
-		if (channel->hasMode('l')) modes += "l";
-		std::string response = RPL_CHANNELMODEIS + client->getNickname() + " " + channelName + " " + modes + "\r\n";
+		if (channel->hasMode('k'))
+		{
+			modes += "k";
+			modeParams += " " + channel->getKey();
+		}
+		if (channel->hasMode('l'))
+		{
+			modes += "l";
+
+			/* Conversion en chaîne de caractères avec std::ostringstream */
+			std::ostringstream oss;
+			oss << channel->getUserLimit();
+			modeParams += " " + oss.str();
+		}
+		std::string response = IrcMessageBuilder::buildChannelModeIsResponse(_serverName, client->getNickname(), channelName, modes, modeParams);
 		send(client->getSocket(), response.c_str(), response.length(), 0);
 		return;
 	}
@@ -1853,40 +1866,40 @@ void Server::sendMotd(Client *client)
      * Envoie le message 002 (RPL_YOURHOST), qui informe le client de l'hôte du serveur
      * et de la version du logiciel qu'il exécute.
      */
-	std::string yourHost = ":" + _serverName + " 002 " + nick + " :Your host is " + _serverName + ", running version 1.0\r\n";
+	std::string yourHost = IrcMessageBuilder::buildYourHostMessage(_serverName, nick, "1.0");
 	send(client->getSocket(), yourHost.c_str(), yourHost.length(), 0);
 
     /**
      * Envoie le message 003 (RPL_CREATED), indiquant la date de création du serveur.
      * Ici, une date fictive est utilisée, mais cela pourrait être dynamique.
      */
-	std::string created = ":" + _serverName + " 003 " + nick + " :This server was created at some point in the past\r\n";
+	std::string created = IrcMessageBuilder::buildServerCreatedMessage(_serverName, nick, "at some point in the past");
 	send(client->getSocket(), created.c_str(), created.length(), 0);
 
     /**
      * Envoie le message 004 (RPL_MYINFO), qui fournit des informations
      * supplémentaires sur le serveur, telles que les options et modes activés.
      */
-	std::string myInfo = ":" + _serverName + " 004 " + nick + " " + _serverName + " 1.0 o o\r\n";
+	std::string myInfo = IrcMessageBuilder::buildMyInfoMessage(_serverName, nick, "1.0", "o", "o");
 	send(client->getSocket(), myInfo.c_str(), myInfo.length(), 0);
 
     /**
      * Envoie le message 375 (RPL_MOTDSTART), indiquant le début du Message of the Day.
      */
-	std::string motdStart = ":" + _serverName + " 375 " + nick + " :- " + _serverName + " Message of the Day - \r\n";
+	std::string motdStart = IrcMessageBuilder::buildMotdStartMessage(_serverName, nick);
 	send(client->getSocket(), motdStart.c_str(), motdStart.length(), 0);
 
     /**
      * Envoie le message 372 (RPL_MOTD), contenant le contenu principal du Message of the Day.
      * Ce message peut être étendu pour inclure plusieurs lignes.
      */
-	std::string motd = ":" + _serverName + " 372 " + nick + " :- Welcome to our IRC server!\r\n";
+	std::string motd = IrcMessageBuilder::buildMotdMessage(_serverName, nick, "Welcome to our IRC server!");
 	send(client->getSocket(), motd.c_str(), motd.length(), 0);
 
     /**
      * Envoie le message 376 (RPL_ENDOFMOTD), indiquant la fin du Message of the Day.
      */
-	std::string motdEnd = ":" + _serverName + " 376 " + nick + " :End of /MOTD command.\r\n";
+	std::string motdEnd = IrcMessageBuilder::buildMotdEndMessage(_serverName, nick);
 	send(client->getSocket(), motdEnd.c_str(), motdEnd.length(), 0);
 }
 
@@ -2023,16 +2036,14 @@ void Server::sendNamesReply(Client *client, Channel *channel)
      * RPL_NAMREPLY (353) :
      * Envoie une réponse avec la liste des noms des utilisateurs connectés au canal.
      */
-	std::string namesReply = ":" + _serverName + " 353 " + client->getNickname() + " = " +
-		channel->getName() + " :" + nickList + "\r\n";
+	std::string namesReply = IrcMessageBuilder::buildNamesReply(_serverName, client->getNickname(), channel->getName(), nickList);
 	send(client->getSocket(), namesReply.c_str(), namesReply.length(), 0);
 
     /**
      * RPL_ENDOFNAMES (366) :
      * Informe que la liste des noms est complète.
      */
-	std::string endOfNames = ":" + _serverName + " 366 " + client->getNickname() + " " +
-		channel->getName() + " :End of /NAMES list.\r\n";
+	std::string endOfNames = IrcMessageBuilder::buildEndOfNamesMessage(_serverName, client->getNickname(), channel->getName());
 	send(client->getSocket(), endOfNames.c_str(), endOfNames.length(), 0);
 }
 
@@ -2059,14 +2070,15 @@ std::vector<std::string> splitArg(const std::string &s, char delimiter)
  */
 void Server::handleJoinCommand(Client *client, const std::vector<std::string> &params)
 {
-    if (params.size() < 2) // Assurez-vous que TWO_ARGMNTS = 2
+	/* Assurez-vous que TWO_ARGMNTS = 2 */
+    if (params.size() < 2)
     {
 		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "JOIN");
         send(client->getSocket(), error.c_str(), error.length(), 0);
         return;
     }
 
-    // Séparer les canaux et les clés par des virgules
+    /* Séparer les canaux et les clés par des virgules */
     std::vector<std::string> channelNames = splitArg(params[1], ',');
     std::vector<std::string> keys;
     if (params.size() >= 3)
@@ -2079,12 +2091,13 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
         if (i < keys.size())
             key = keys[i];
 
-        // Valider le nom du canal
+        /* Valider le nom du canal */
         if (channelName.empty() || (channelName[0] != '#' && channelName[0] != '&'))
         {
-            std::string error = "476 ERR_BADCHANMASK " + channelName + " :Bad Channel Mask\r\n";
+			std::string error = IrcMessageBuilder::buildBadChannelMaskError(_serverName, channelName);
             send(client->getSocket(), error.c_str(), error.length(), 0);
-            continue; // Passe au canal suivant
+			/* Passe au canal suivant */
+            continue;
         }
 
         /* Initialiser le canal */
@@ -2096,68 +2109,78 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
             if (channel == NULL)
             {
                 std::cerr << "Échec de l'allocation mémoire pour le canal " << channelName << "." << std::endl;
-                continue; // Passe au canal suivant
+                /* Passe au canal suivant */
+				continue;
             }
             _channels[channelName] = channel;
             channel->addOperator(client);
-            // Implémenter un log ici si nécessaire
         }
         else
         {
             channel = _channels[channelName];
 
-            // Vérifier le mode 'i' (invitation uniquement)
+            /* Vérifier le mode 'i' (invitation uniquement) */
             if (channel->hasMode('i') && !channel->isInvited(client))
             {
-                std::string error = "473 ERR_INVITEONLYCHAN " + channelName + " :Cannot join channel (+i)\r\n";
+				std::string error = IrcMessageBuilder::buildInviteOnlyChannelError(_serverName, channelName);
                 send(client->getSocket(), error.c_str(), error.length(), 0);
-                continue; // Passe au canal suivant
+                /* Passe au canal suivant */
+				continue;
             }
 
-            // Vérifier le mode 'k' (clé du canal)
+            /* Vérifier le mode 'k' (clé du canal) */
             if (channel->hasMode('k') && !channel->checkKey(key))
             {
-                std::string error = "475 ERR_BADCHANNELKEY " + channelName + " :Cannot join channel (+k)\r\n";
+				std::string error = IrcMessageBuilder::buildBadChannelKeyError(_serverName, channelName);
                 send(client->getSocket(), error.c_str(), error.length(), 0);
-                continue; // Passe au canal suivant
+                continue; /* Passe au canal suivant */
             }
 
-            // Vérifier le mode 'l' (limite d'utilisateurs)
+            /* Vérifier le mode 'l' (limite d'utilisateurs) */
             if (channel->isFull())
             {
-                std::string error = "471 ERR_CHANNELISFULL " + channelName + " :Cannot join channel (+l)\r\n";
+				std::string error = IrcMessageBuilder::buildChannelIsFullError(_serverName, channelName);
                 send(client->getSocket(), error.c_str(), error.length(), 0);
-                continue; // Passe au canal suivant
+                /* Passe au canal suivant */
+				continue; 
             }
         }
 
-        // Ajouter le client au canal
+        /* Ajouter le client au canal */
         channel->addClient(client);
         client->joinChannel(channel);
         channel->removeInvitation(client);
 
-        // Notifier les autres clients dans le canal
-        std::string joinMsg = ":" + client->getNickname() + "!" + client->getRealname() + "@" + getServerIp() + " JOIN :" + channelName + "\r\n";
+        /* Notifier les autres clients dans le canal */
+		std::string joinMsg = IrcMessageBuilder::buildJoinMessage(client->getNickname(), client->getRealname(), getServerIp(), channelName);
+
+
+        /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
+        /*                                LOG SERVEUR                                */
+        /*             AFFICHÉ DANS LE TERMINAL OÙ LE SERVEUR EST LANCÉ.             */
+        /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
         std::cout << "\nCmd Join send by " << getBackgroundColorCode(client->getSocket()) << joinMsg << "\033[0m\033[K";
+
+
         const std::vector<Client*> &channelClients = channel->getClients();
         for (size_t j = 0; j < channelClients.size(); ++j)
         {
             send(channelClients[j]->getSocket(), joinMsg.c_str(), joinMsg.length(), 0);
         }
 
-        // Envoyer le sujet du canal (RPL_TOPIC ou RPL_NOTOPIC) au client
+        /* Envoyer le sujet du canal (RPL_TOPIC ou RPL_NOTOPIC) au client */
         if (channel->hasTopic())
         {
-            std::string topicMsg = ":" + _serverName + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
-            send(client->getSocket(), topicMsg.c_str(), topicMsg.length(), 0);
+            std::string topicMsg = IrcMessageBuilder::buildTopicReply(_serverName, client->getNickname(), channelName, channel->getTopic());
+			send(client->getSocket(), topicMsg.c_str(), topicMsg.length(), 0);
         }
         else
         {
-            std::string noTopicMsg = ":" + _serverName + " 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n";
+            std::string noTopicMsg = IrcMessageBuilder::buildNoTopicReply(_serverName, client->getNickname(), channelName);
             send(client->getSocket(), noTopicMsg.c_str(), noTopicMsg.length(), 0);
         }
 
-        // Envoyer la liste des membres du canal (commande NAMES)
+        /* Envoyer la liste des membres du canal (commande NAMES) */
         sendNamesReply(client, channel);
     }
 }
@@ -2171,7 +2194,7 @@ void Server::handleJoinCommand(Client *client, const std::vector<std::string> &p
  */
 void Server::handlePartCommand(Client *client, const std::vector<std::string> &params)
 {
-    // Vérification du nombre minimum de paramètres
+    /* Vérification du nombre minimum de paramètres */
     if (params.size() < TWO_ARGMNTS)
     {
 		std::string error = IrcMessageBuilder::buildNeedMoreParamsError(_serverName, "PART");
@@ -2179,14 +2202,14 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
         return;
     }
 
-    // Récupération de la liste des canaux séparés par des virgules
+    /* Récupération de la liste des canaux séparés par des virgules */
     std::vector<std::string> channelNames = splitArg(params[1], ',');
 
     for (size_t i = 0; i < channelNames.size(); ++i)
     {
         std::string channelName = channelNames[i];
 
-        // Vérifie que le canal existe
+        /* Vérifie que le canal existe */
         if (_channels.find(channelName) == _channels.end())
         {
             std::string error = IrcMessageBuilder::buildNoSuchChannelError(_serverName, channelName);
@@ -2196,7 +2219,7 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
 
         Channel *channel = _channels[channelName];
 
-        // Vérifie que le client est membre du canal
+        /* Vérifie que le client est membre du canal */
         if (!channel->hasClient(client))
         {
             std::string error = IrcMessageBuilder::buildNotOnChannelError(_serverName, channelName);
@@ -2204,9 +2227,16 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
             continue;
         }
 
-        // Prépare et envoie le message PART à tous les membres du canal
-        std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + getServerIp() + " PART " + channelName + "\r\n";
+        /* Prépare et envoie le message PART à tous les membres du canal */
+		std::string partMsg = IrcMessageBuilder::buildPartMessage(client->getNickname(), client->getUsername(), getServerIp(), channelName);
+
+
+        /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
+        /*                                LOG SERVEUR                                */
+        /*             AFFICHÉ DANS LE TERMINAL OÙ LE SERVEUR EST LANCÉ.             */
+        /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
         std::cout << "\033[0m\nCmd PART send by " << getBackgroundColorCode(client->getSocket()) << ":" << partMsg << "\033[0m\033[K";
+
 
         const std::vector<Client*> &channelClients = channel->getClients();
         for (size_t j = 0; j < channelClients.size(); ++j)
@@ -2214,11 +2244,11 @@ void Server::handlePartCommand(Client *client, const std::vector<std::string> &p
             send(channelClients[j]->getSocket(), partMsg.c_str(), partMsg.length(), 0);
         }
 
-        // Retire le client du canal
+        /* Retire le client du canal */
         channel->removeClient(client);
         client->leaveChannel(channel);
 
-        // Supprime le canal si vide
+        /* Supprime le canal si vide */
         if (channel->getClients().empty())
         {
             _channels.erase(channelName);
@@ -2310,7 +2340,7 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
 		/* Cible est un canal */
 		if (_channels.find(target) == _channels.end())
 		{
-			std::string error = ":" + _serverName + " 403 " + client->getNickname() + " " + target + " :No such channel\r\n";
+			std::string error = IrcMessageBuilder::buildNoSuchChannelError(_serverName, target);
 			send(client->getSocket(), error.c_str(), error.length(), 0);
 			return;
 		}
@@ -2323,7 +2353,7 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
          */
 		if (!channel->hasClient(client))
 		{
-			std::string error = ":" + _serverName + " 404 " + client->getNickname() + " " + target + " :Cannot send to channel\r\n";
+			std::string error = IrcMessageBuilder::buildCannotSendToChannelError(_serverName, client->getNickname(), target);
 			send(client->getSocket(), error.c_str(), error.length(), 0);
 			return;
 		}
@@ -2359,7 +2389,7 @@ void Server::handlePrivmsgCommand(Client *client, const std::vector<std::string>
          */
 		if (!targetClient)
 		{
-			std::string error = ":" + _serverName + " 401 " + client->getNickname() + " " + target + " :No such nick/channel\r\n";
+			std::string error = IrcMessageBuilder::buildNoSuchNickError(_serverName, target);
 			send(client->getSocket(), error.c_str(), error.length(), 0);
 			return;
 		}

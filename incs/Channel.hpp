@@ -98,6 +98,9 @@ class Channel
         /* Retourne true si le canal a une clé, false sinon */
         bool hasKey() const;
 
+        const std::string &getKey() const;
+
+
 
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
         /*                                   LIMIT                                   */

@@ -96,6 +96,53 @@ class IrcMessageBuilder
         /* ERR_ERRONEUSUSERNAME : "491 username :Erroneous username\r\n" */
         static std::string buildErroneousUsernameError(const std::string& serverName, const std::string& username);
 
+        /* MSG RPL_YOURHOST : "nickname HOST :serverName version\r\n" */
+        static std::string buildYourHostMessage(const std::string& serverName, const std::string& nick, const std::string& serverVersion);
+
+        /* MSG RPL_CREATED : "nickname 003 :This server was created on creationDate\r\n" */
+        static std::string buildServerCreatedMessage(const std::string& serverName, const std::string& nick, const std::string& creationDate);
+
+        /* MSG RPL_MYINFO : "nickname 004 serverName version userModes channelModes\r\n" */
+        static std::string buildMyInfoMessage(const std::string& serverName, const std::string& nick, const std::string& version, const std::string& userModes, const std::string& channelModes);
+
+        /* MSG RPL_MOTDSTART : "serverName 375 nickname :- serverName Message of the Day - \r\n" */
+        static std::string buildMotdStartMessage(const std::string& serverName, const std::string& nick);
+
+        /* MSG RPL_MOTD : "serverName 372 nickname :- Welcome to our IRC server!\r\n" */
+        static std::string buildMotdMessage(const std::string& serverName, const std::string& nick, const std::string& message);
+
+        /* MSG RPL_ENDOFMOTD : "serverName 376 nickname :End of /MOTD command.\r\n" */
+        static std::string buildMotdEndMessage(const std::string& serverName, const std::string& nick);
+
+        /* MSG RPL_NAMREPLY : "serverName 353 nickname = channelName :nickList\r\n" */
+        static std::string buildNamesReply(const std::string& serverName, const std::string& nick, const std::string& channelName, const std::string& nickList);
+
+        /* MSG RPL_ENDOFNAMES : "serverName 366 nickname channelName :End of /NAMES list\r\n" */
+        static std::string buildEndOfNamesMessage(const std::string& serverName, const std::string& nick, const std::string& channelName);
+
+        /* ERR_BADCHANMASK : "serverName 476 channelName :Bad Channel Mask\r\n" */
+        static std::string buildBadChannelMaskError(const std::string& serverName, const std::string& channelName);
+
+        /* ERR_INVITEONLYCHAN : "serverName 473 channelName :Cannot join channel (+i)\r\n" */
+        static std::string buildInviteOnlyChannelError(const std::string& serverName, const std::string& channelName);
+
+        /* ERR_BADCHANNELKEY : "serverName 475 channelName :Cannot join channel (+k)\r\n" */
+        static std::string buildBadChannelKeyError(const std::string& serverName, const std::string& channelName);
+
+        /* ERR_CHANNELISFULL : "serverName 471 channelName :Cannot join channel (+l)\r\n" */
+        static std::string buildChannelIsFullError(const std::string& serverName, const std::string& channelName);
+
+        /* MSG JOIN : "nickname JOIN :channelName\r\n" */
+        static std::string buildJoinMessage(const std::string& nickname, const std::string& realname, const std::string& serverIp, const std::string& channelName);
+
+        /* MSG PART : "nickname PART :channelName\r\n" */
+        static std::string buildPartMessage(const std::string& nickname, const std::string& username, const std::string& serverIp, const std::string& channelName);
+
+        /* ERR_CANNOTSENDTOCHAN : "serverName 404 nickname channelName :Cannot send to channel\r\n" */
+        static std::string buildCannotSendToChannelError(const std::string& serverName, const std::string& nickname, const std::string& target);
+
+        static std::string buildChannelModeIsResponse(const std::string& serverName, const std::string& nickname, const std::string& channelName, const std::string& modes, const std::string& modeParams);
+
 };
 
 #endif
