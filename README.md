@@ -38,30 +38,44 @@ Vous devez tester votre serveur à l'aide d'un vrai client IRC pour garantir la 
 
 ## Structure du Projet
 
-- **Fichiers rendus** : 
-  - `Makefile`
-  - Fichiers sources C++ (.cpp, .hpp)
-  - Un fichier de configuration optionnel
-
+```bash
+.
+├── incs
+│   ├── Bot.hpp
+│   ├── Channel.hpp
+│   ├── Client.hpp
+│   ├── IrcMessageBuilder.hpp
+│   ├── IrcNumericReplies.hpp
+│   └── Server.hpp
+├── Makefile
+├── README.md
+└── srcs
+    ├── Bot.cpp
+    ├── Channel.cpp
+    ├── Client.cpp
+    ├── IrcMessageBuilder.cpp
+    ├── main.cpp
+    └── Server.cpp
+```
 ## Compilation
 
 Utilisez le **Makefile** pour compiler le projet avec les options de compilation requises. Le projet doit se compiler en utilisant C++98 avec les flags `-Wall -Wextra -Werror`.
 
-Commandes disponibles :
+**Commandes disponibles :**
 ```bash
 make        # Compile le projet
 make clean  # Supprime les fichiers objets
 make fclean # Supprime les fichiers objets et les binaires
 make re     # Recompile le projet
 ```
-- **Arguments** :
-  - `<port>` : Le numéro de port sur lequel le serveur écoutera.
-  - `<password>` : Le mot de passe que les clients devront fournir pour se connecter.
 
-Exemple de commande pour lancer le serveur :
+## Lancer le serveur :
 ```bash
 ./ircserv <port> <password>
 ```
+- **Arguments** :
+  - `<port>` : Le numéro de port sur lequel le serveur écoutera.
+  - `<password>` : Le mot de passe que les clients devront fournir pour se connecter.
 
 ## Tests
 
