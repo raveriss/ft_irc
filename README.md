@@ -42,14 +42,6 @@ Vous devez tester votre serveur à l'aide d'un vrai client IRC pour garantir la 
   - `Makefile`
   - Fichiers sources C++ (.cpp, .hpp)
   - Un fichier de configuration optionnel
-- **Arguments** :
-  - `<port>` : Le numéro de port sur lequel le serveur écoutera.
-  - `<password>` : Le mot de passe que les clients devront fournir pour se connecter.
-
-Exemple de commande pour lancer le serveur :
-```bash
-./ircserv <port> <password>
-```
 
 ## Compilation
 
@@ -61,6 +53,14 @@ make        # Compile le projet
 make clean  # Supprime les fichiers objets
 make fclean # Supprime les fichiers objets et les binaires
 make re     # Recompile le projet
+```
+- **Arguments** :
+  - `<port>` : Le numéro de port sur lequel le serveur écoutera.
+  - `<password>` : Le mot de passe que les clients devront fournir pour se connecter.
+
+Exemple de commande pour lancer le serveur :
+```bash
+./ircserv <port> <password>
 ```
 
 ## Tests
