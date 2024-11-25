@@ -19,7 +19,7 @@
 #include <algorithm>
 
 /**
- * Constructeur
+ * Constructeur du bot, il definit les mots interdits
  */
 Bot::Bot()
 {
@@ -30,44 +30,21 @@ Bot::Bot()
 }
 
 /**
- * Destructeur
+ * Destructeur du bot, il vide les conteneurs contenant les mots interdits
+ * et les clients qui ont recus des avertissements.
  */
 Bot::~Bot()
 {
-    
-    /* Vider les conteneurs */
     _forbiddenWords.clear();
-
-    /* Vider les avertissements */
     _warnings.clear();
 }
 
 /**
- * Ajoute un mot interdit
- */
-void Bot::addForbiddenWord(const std::string &word)
-{
-    _forbiddenWords.insert(word);
-}
-
-/**
- * Retire un mot interdit
- */
-void Bot::removeForbiddenWord(const std::string &word)
-{
-    _forbiddenWords.erase(word);
-}
-
-/**
- * Vérifie si un mot est interdit
- */
-bool Bot::isForbiddenWord(const std::string &word) const
-{
-    return _forbiddenWords.find(word) != _forbiddenWords.end();
-}
-
-/**
- * Traite un message
+ * Convertit le message en minuscule, remplace les caracteres non alphanumeriques
+ * par des espaces et decoupe le message en mots distincts.
+ * Puis il verifie le message du client mot par mot, si un mot interdit est trouve et que
+ * le client n'a pas encore recu d'avertissement, il envoie un avertissement.
+ * Si le client a deja recu un avertissement, il est expulse du canal.
  */
 void Bot::handleMessage(Client *client, Channel *channel, const std::string &message)
 {
@@ -108,12 +85,10 @@ void Bot::handleMessage(Client *client, Channel *channel, const std::string &mes
     }
 }
 
-
-
-
-
 /**
- * Envoie un avertissement à un client
+ * Definit le message d'avertissement en cas d'utilisation de mots interdits.
+ * Cherche tous les clients presents dans le canal et envoie le message d'avertissement
+ * et a qui il s'adresse.
  */
 void Bot::sendWarning(Client *client, Channel *channel)
 {
@@ -127,9 +102,12 @@ void Bot::sendWarning(Client *client, Channel *channel)
     }
 }
 
-
 /**
- * Expulse un client du canal
+ * Verifie que le client problematique est bien dans le canal.
+ * Il definit le message de kick et l'envoie a tous les clients du canal.
+ * Il retire le client problematique du canal, des operateurs et des invites
+ * avec removeClient.
+ * Puis il fait sortir le client du canal avec leaveChannel.
  */
 void Bot::kickClient(Client *client, Channel *channel)
 {
@@ -139,8 +117,6 @@ void Bot::kickClient(Client *client, Channel *channel)
 
     /* Remplacez par le pseudo de votre bot */
     std::string botNickname = "Bot";
-
-    /* Formater le message de kick selon le protocole IRC */
     std::string kickMessage = ":" + botNickname + " KICK " + channel->getName() + " " + client->getNickname() + " :You have been kicked for inappropriate language.\r\n";
 
     /* Envoyer le message de kick à tous les clients du canal */
