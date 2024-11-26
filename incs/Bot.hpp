@@ -51,21 +51,6 @@ class Bot
         /* Destructeur */
         ~Bot();
 
-
-        /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
-        /*                                   MOTS INTERDITS                          */
-        /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
-
-        /* Ajoute un mot interdit */
-        void addForbiddenWord(const std::string &word);
-
-        /* Retire un mot interdit */
-        void removeForbiddenWord(const std::string &word);
-
-        /* Vérifie si un mot est interdit */
-        bool isForbiddenWord(const std::string &word) const;
-
-
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
         /*                                   MESSAGES                                */
         /*   -'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-'-,-',-'   */
