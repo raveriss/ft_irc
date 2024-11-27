@@ -102,6 +102,14 @@ nc 127.0.0.1 <port>
 - **Bot IRC** : Possibilité d'ajouter un petit bot qui interagit avec les utilisateurs.
 - **Transfert de fichiers** : Support de l'envoi de fichiers entre clients.
 
+## Aperçu du Serveur
+
+Voici un aperçu de l'interface graphique du serveur ft_irc lors de son lancement :
+
+<div align="center">
+  <img src="assets/ft_irc.png" alt="Aperçu du serveur ft_irc" width="800">
+</div>
+
 ## Commandes Utiles
 ### Outils de Débogage et Diagnostic
 - **Vérification des Connexions Actives sur le Port `<port>` avec `lsof` :**
