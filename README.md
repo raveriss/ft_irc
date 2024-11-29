@@ -238,7 +238,7 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
     - `12345` : `Port` fourni par `Raf`.
 
 
-#### Navigation dans irssi
+### Navigation dans irssi
 Pour passer de l'écran d'une conversation privée à la page d'accueil d'`Irssi` (généralement appelée "fenêtre active par défaut" ou "fenêtre 1") :
 
 - Appuyez sur `Alt + 1` ou `Esc` suivi de `1` pour retourner à la fenêtre 1, qui est souvent la page d'accueil ou le canal principal.
@@ -248,8 +248,8 @@ Vous pouvez également utiliser `Ctrl + P` (fenêtre précédente) ou `Ctrl + N`
 
 - Tapez `/window goto 1` dans n'importe quelle fenêtre pour revenir à la fenêtre 1.
 
-#### Tester la suspention d'un client dans un channel
-##### Avec `nc` :
+### Tester la suspention d'un client dans un channel
+#### Avec `nc` :
 
 - **1. Quand un client est dans un channel contenant plusieurs autres clients, faire un `Ctrl + Z`.**
 
