@@ -77,13 +77,21 @@ make re     # Recompile le projet
   - `<port>` : Le numéro de port sur lequel le serveur écoutera.
   - `<password>` : Le mot de passe que les clients devront fournir pour se connecter.
 
+## Aperçu du Serveur
+
+Voici un aperçu de l'interface graphique du serveur ft_irc lors de son lancement :
+
+<div align="center">
+  <img src="assets/ft_irc.png" alt="Aperçu du serveur ft_irc" width="800">
+</div>
+
 ## Tests
 
 Utilisez un client IRC tel que **nc** (netcat) ou un client IRC de référence pour tester la connectivité et les fonctionnalités du serveur.
 
 Exemple de connexion avec **nc** :
 ```bash
-nc 127.0.0.1 <port>
+nc <server_ip> <port>
 ```
 
 ### Exemple de commandes IRC supportées
@@ -101,14 +109,6 @@ nc 127.0.0.1 <port>
 
 - **Bot IRC** : Possibilité d'ajouter un petit bot qui interagit avec les utilisateurs.
 - **Transfert de fichiers** : Support de l'envoi de fichiers entre clients.
-
-## Aperçu du Serveur
-
-Voici un aperçu de l'interface graphique du serveur ft_irc lors de son lancement :
-
-<div align="center">
-  <img src="assets/ft_irc.png" alt="Aperçu du serveur ft_irc" width="800">
-</div>
 
 ## Commandes Utiles
 ### Outils de Débogage et Diagnostic
@@ -137,12 +137,12 @@ Voici un aperçu de l'interface graphique du serveur ft_irc lors de son lancemen
   ```
   Dans `irssi` :
   ```irssi
-  /connect 127.0.0.1 6667
+  /connect <server_ip> 6667
   ```
 - **Se Connecter à un Serveur IRC Local sur le Port `6667` avec le Pseudo `Raf` et le Mot de Passe `1912` :**
 
   ```bash
-  irssi -c 127.0.0.1 -p 6667 -n Raf -w 1912
+  irssi -c <server_ip> -p 6667 -n Raf -w 1912
   ```
 - **Pour Utiliser /RAWLOG OPEN ~/debug.log avec votre Serveur `IRC` :**
 
