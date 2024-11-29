@@ -266,7 +266,7 @@ fg % <n>
 ```
 Remplacez `<n>` par le numéro affiché entre crochets dans le message `Stopped`.
 
-Si votre projet `IRC   fonctionne correctement, apres cette commande les messages ecrits pendant qu'il etait suspendu devraient apparaitre dans le terminal.
+Si votre projet `IRC` fonctionne correctement, apres cette commande les messages ecrits pendant qu'il etait suspendu devraient apparaitre dans le terminal.
 
 ---
 
