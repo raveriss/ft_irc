@@ -85,25 +85,49 @@ Voici un aperçu de l'interface graphique du serveur ft_irc lors de son lancemen
   <img src="assets/ft_irc.png" alt="Aperçu du serveur ft_irc" width="800">
 </div>
 
-## Tests
+## Se Connecter à un Serveur IRC
 
-Utilisez un client IRC tel que **nc** (netcat) ou un client IRC de référence pour tester la connectivité et les fonctionnalités du serveur.
+Cette section décrit les différentes méthodes pour se connecter à un serveur `IRC` en fonction de l'outil utilisé.
 
-Exemple de connexion avec **nc** :
+### 1. Connexion avec `nc` (`netcat`)
+Utilisez `nc` pour établir une connexion basique au serveur `IRC`. C'est utile pour des tests rapides :
+    
 ```bash
 nc <server_ip> <port>
 ```
+    
+Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` directement dans le terminal (par exemple, `PASS`, `NICK`, `USER`, etc.).
+
+### 2. Connexion avec `irssi`
+  - Méthode A : Connexion simple
+    Lancer `irssi` :
+    ```bash
+    irssi
+    ```
+
+    Une fois dans l'interface d'`irssi`, utilisez la commande suivante :
+    ```irssi
+    /connect <server_ip> <port>
+    ```
+  - Méthode B : Connexion avec paramètres (`port`, `nickname`, `password`)
+    ```bash
+    irssi -c <server_ip> -p <port> -n <nickname> -w <password>
+    ```
+  **Comparaison des outils :**
+  
+  `nc` (`netcat`) : Idéal pour des tests basiques et vérifier les échanges bruts avec le serveur.
+  `irssi` : Offre une interface interactive, utile pour tester des fonctionnalités avancées comme la gestion des canaux ou les commandes administratives.
 
 ### Exemple de commandes IRC supportées
 
-- **NICK** : Changer le pseudonyme du client
-- **USER** : S'authentifier sur le serveur
-- **JOIN** : Rejoindre un canal
-- **PRIVMSG** : Envoyer un message privé ou un message dans un canal
-- **KICK** : Éjecter un client d'un canal (opérateurs uniquement)
-- **INVITE** : Inviter un client à rejoindre un canal
-- **TOPIC** : Changer ou afficher le sujet d'un canal
-- **MODE** : Modifier les permissions d'un canal (opérateurs uniquement)
+- **`NICK`** : Changer le pseudonyme du client
+- **`USER`** : S'authentifier sur le serveur
+- **`JOIN`** : Rejoindre un canal
+- **`PRIVMSG`** : Envoyer un message privé ou un message dans un canal
+- **`KICK`** : Éjecter un client d'un canal (opérateurs uniquement)
+- **`INVITE`** : Inviter un client à rejoindre un canal
+- **`TOPIC`** : Changer ou afficher le sujet d'un canal
+- **`MODE`** : Modifier les permissions d'un canal (opérateurs uniquement)
 
 ## Bonus
 
@@ -129,21 +153,7 @@ nc <server_ip> <port>
   ```bash
   code ~/.irssi/config
   ```
-- **Se Connecter à un Serveur IRC :**
 
-  Dans `bash` :
-  ```bash
-  irssi
-  ```
-  Dans `irssi` :
-  ```irssi
-  /connect <server_ip> <port>
-  ```
-- **Se Connecter à un Serveur IRC avec le `port`, `nickname` et `password` :**
-
-  ```bash
-  irssi -c <server_ip> -p <port> -n <nickname> -w <password>
-  ```
 - **Pour Utiliser /RAWLOG OPEN ~/debug.log avec votre Serveur `IRC` :**
 
   Dans irssi :
@@ -228,7 +238,7 @@ nc <server_ip> <port>
     - `12345` : `Port` fourni par `Raf`.
 
 
-### Navigation dans irssi
+#### Navigation dans irssi
 Pour passer de l'écran d'une conversation privée à la page d'accueil d'`Irssi` (généralement appelée "fenêtre active par défaut" ou "fenêtre 1") :
 
 - Appuyez sur `Alt + 1` ou `Esc` suivi de `1` pour retourner à la fenêtre 1, qui est souvent la page d'accueil ou le canal principal.
@@ -238,8 +248,8 @@ Vous pouvez également utiliser `Ctrl + P` (fenêtre précédente) ou `Ctrl + N`
 
 - Tapez `/window goto 1` dans n'importe quelle fenêtre pour revenir à la fenêtre 1.
 
-### Tester la suspention d'un client dans un channel
-#### Avec `nc` :
+#### Tester la suspention d'un client dans un channel
+##### Avec `nc` :
 
 - **1. Quand un client est dans un channel contenant plusieurs autres clients, faire un `Ctrl + Z`.**
 
