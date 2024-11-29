@@ -16,13 +16,13 @@
 
 ## Description
 
-Le projet **ft_irc** consiste à développer un serveur IRC en respectant le standard IRC tout en utilisant le langage **C++98**. Le serveur doit gérer plusieurs connexions simultanées et fonctionner en mode non bloquant pour permettre une communication fluide entre les clients.
+Le projet **`ft_irc`** consiste à développer un serveur IRC en respectant le standard IRC tout en utilisant le langage **`C++98`**. Le serveur doit gérer plusieurs connexions simultanées et fonctionner en mode non bloquant pour permettre une communication fluide entre les clients.
 
 Vous devez tester votre serveur à l'aide d'un vrai client IRC pour garantir la compatibilité avec le protocole standard.
 
 ## Objectifs
 
-- Reproduire le fonctionnement d'un serveur **IRC** en C++98.
+- Reproduire le fonctionnement d'un serveur **`IRC`** en C++98.
 - Gérer plusieurs clients simultanément sans blocage.
 - Implémenter les principales commandes IRC comme `NICK`, `USER`, `JOIN`, `PRIVMSG`, etc.
 - Fournir un système d'authentification via un mot de passe à la connexion.
@@ -30,8 +30,8 @@ Vous devez tester votre serveur à l'aide d'un vrai client IRC pour garantir la 
 
 ## Fonctionnalités
 
-- **Communication TCP/IP** : Utilisation des sockets pour la communication entre le serveur et les clients via le protocole **TCP/IP** (v4 ou v6).
-- **Gestion des canaux** : Le serveur doit permettre la création et la gestion de canaux IRC, avec la possibilité d'envoyer des messages privés ou dans des canaux.
+- **Communication `TCP`/`IP`** : Utilisation des sockets pour la communication entre le serveur et les clients via le protocole **`TCP`/`IP`** (`v4` ou `v6`).
+- **Gestion des canaux** : Le serveur doit permettre la création et la gestion de canaux `IRC`, avec la possibilité d'envoyer des messages privés ou dans des canaux.
 - **Non-bloquant** : Toutes les opérations d'entrée/sortie (E/S) sont non bloquantes afin de ne jamais empêcher la gestion simultanée des connexions multiples.
 - **Sécurité** : Utilisation d'un mot de passe pour sécuriser l'accès au serveur. Chaque client doit fournir le bon mot de passe pour pouvoir se connecter.
 - **Support multi-clients** : Le serveur peut gérer plusieurs connexions simultanément sans aucun forking ou thread supplémentaire.
@@ -57,68 +57,7 @@ Vous devez tester votre serveur à l'aide d'un vrai client IRC pour garantir la 
     ├── main.cpp
     └── Server.cpp
 ```
-## Compilation
-
-Utilisez le **Makefile** pour compiler le projet avec les options de compilation requises. Le projet doit se compiler en utilisant C++98 avec les flags `-Wall -Wextra -Werror`.
-
-**Commandes disponibles :**
-```bash
-make        # Compile le projet
-make clean  # Supprime les fichiers objets
-make fclean # Supprime les fichiers objets et les binaires
-make re     # Recompile le projet
-```
-
-## Lancer le serveur :
-```bash
-./ircserv <port> <password>
-```
-- **Arguments** :
-  - `<port>` : Le numéro de port sur lequel le serveur écoutera.
-  - `<password>` : Le mot de passe que les clients devront fournir pour se connecter.
-
-## Aperçu du Serveur
-
-Voici un aperçu de l'interface graphique du serveur ft_irc lors de son lancement :
-
-<div align="center">
-  <img src="assets/ft_irc.png" alt="Aperçu du serveur ft_irc" width="800">
-</div>
-
-## Se Connecter à un Serveur IRC
-
-Cette section décrit les différentes méthodes pour se connecter à un serveur `IRC` en fonction de l'outil utilisé.
-
-### 1. Connexion avec `nc` (`netcat`)
-Utilisez `nc` pour établir une connexion basique au serveur `IRC`. C'est utile pour des tests rapides :
-    
-```bash
-nc <server_ip> <port>
-```
-    
-Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` directement dans le terminal (par exemple, `PASS`, `NICK`, `USER`, etc.).
-
-### 2. Connexion avec `irssi`
-  - Méthode A : Connexion simple
-    Lancer `irssi` :
-    ```bash
-    irssi
-    ```
-
-    Une fois dans l'interface d'`irssi`, utilisez la commande suivante :
-    ```irssi
-    /connect <server_ip> <port>
-    ```
-  - Méthode B : Connexion avec paramètres (`port`, `nickname`, `password`)
-    ```bash
-    irssi -c <server_ip> -p <port> -n <nickname> -w <password>
-    ```
-  **Comparaison des outils :**
-  
-  `nc` (`netcat`) : Idéal pour des tests basiques et vérifier les échanges bruts avec le serveur.
-  `irssi` : Offre une interface interactive, utile pour tester des fonctionnalités avancées comme la gestion des canaux ou les commandes administratives.
-
-### Exemple de commandes IRC supportées
+## Exemple de commandes IRC supportées
 
 - **`NICK`** : Changer le pseudonyme du client
 - **`USER`** : S'authentifier sur le serveur
@@ -134,33 +73,36 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
 - **Bot IRC** : Possibilité d'ajouter un petit bot qui interagit avec les utilisateurs.
 - **Transfert de fichiers** : Support de l'envoi de fichiers entre clients.
 
-## Commandes Utiles
-### Outils de Débogage et Diagnostic
-- **Vérification des Connexions Actives sur le Port `<port>` avec `lsof` :**
-  ```bash
-  lsof -i :<port>
-  ```
-- **Forcer la Fermeture des Processus Actifs sur le Port `<port>` :**
-  ```bash
-  kill -9 $(lsof -t -i :<port>)
-  ```
-- **Fuites Mémoire et Vérification des Descripteurs Actifs pour `ircserv` via `Valgrind` :**
-  ```bash
-  valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv <port> <password>
-  ```
-### Utilisation d’Irssi
-- **Ouvrir le Fichier de Configuration d'`Irssi` avec `VS Code` :**
-  ```bash
-  code ~/.irssi/config
-  ```
+## Compilation
 
-- **Pour Utiliser /RAWLOG OPEN ~/debug.log avec votre Serveur `IRC` :**
+Utilisez le **`Makefile`** pour compiler le projet avec les options de compilation requises. Le projet doit se compiler en utilisant C++98 avec les flags `-Wall -Wextra -Werror`.
 
-  Dans irssi :
-  ```irssi
-  /RAWLOG OPEN ~/debug.log
-  ```
-### Gestion des Adresses IP ###
+**Commandes disponibles :**
+```bash
+make        # Compile le projet
+make clean  # Supprime les fichiers objets
+make fclean # Supprime les fichiers objets et les binaires
+make re     # Recompile le projet
+```
+
+## Lancer le serveur :
+```bash
+./ircserv <port> <password>
+```
+- **Arguments** :
+  - `<port>` : Le numéro de `port` sur lequel le serveur écoutera.
+  - `<password>` : Le mot de passe que les clients devront fournir pour se connecter.
+
+## Aperçu du Serveur
+
+Voici un aperçu de l'interface graphique du serveur `ft_irc` lors de son lancement :
+
+<div align="center">
+  <img src="assets/ft_irc.png" alt="Aperçu du serveur ft_irc" width="800">
+</div>
+
+## Gestion des Adresses `IP`
+
 - **Afficher les Adresses `IP` de l’Hôte :**
 
   ```bash
@@ -181,23 +123,90 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
   ```bash
   hostname -I | awk '{print $1}'
   ```
-### Adresse `IP` pour les transferts DCC
+## Se Connecter à un Serveur `IRC`
 
-- **Observation** :
-  Votre configuration indique `hostname = "127.0.0.1"` dans les paramètres du core. L'adresse `127.0.0.1` est l'adresse de bouclage (*localhost*) et n'est pas accessible depuis d'autres machines sur le réseau.
+Cette section décrit les différentes méthodes pour se connecter à un serveur `IRC` en fonction de l'outil utilisé.
 
-- **Solution** :
-  Définissez votre adresse `IP` externe ou locale correcte en utilisant la commande suivante dans `Irssi` :
+### 1. Connexion avec `nc` (`netcat`)
+Utilisez `nc` pour établir une connexion basique au serveur `IRC`. C'est utile pour des tests rapides :
+    
+```bash
+nc <server_ip> <port>
+```
+    
+Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` directement dans le terminal (par exemple, `PASS`, `NICK`, `USER`, etc.).
+
+### 2. Connexion avec `irssi`
+  - **Méthode A** : Connexion simple
+    Lancer `irssi` :
+    ```bash
+    irssi
+    ```
+
+    Une fois dans l'interface d'`irssi`, utilisez la commande suivante :
+    ```irssi
+    /connect <server_ip> <port>
+    ```
+  - **Méthode B** : Connexion avec paramètres (`port`, `nickname`, `password`)
+    ```bash
+    irssi -c <server_ip> -p <port> -n <nickname> -w <password>
+    ```
+  **Comparaison des outils :**
+  
+  `nc` (`netcat`) : Idéal pour des tests basiques et vérifier les échanges bruts avec le serveur.
+  `irssi` : Offre une interface interactive, utile pour tester des fonctionnalités avancées comme la gestion des canaux ou les commandes administratives.
+
+## Commandes Utiles
+### Outils de Débogage et Diagnostic
+- **Vérification des Connexions Actives sur le Port `<port>` avec `lsof` :**
+  ```bash
+  lsof -i :<port>
+  ```
+- **Forcer la Fermeture des Processus Actifs sur le Port `<port>` :**
+  ```bash
+  kill -9 $(lsof -t -i :<port>)
+  ```
+- **Fuites Mémoire et Vérification des Descripteurs Actifs pour `ircserv` via `Valgrind` :**
+  ```bash
+  valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv <port> <password>
+  ```
+### Utilisation d’`Irssi`
+- **Ouvrir le Fichier de Configuration d'`Irssi` avec `VS Code` :**
+  ```bash
+  code ~/.irssi/config
+  ```
+
+- **Pour Utiliser `RAWLOG` avec votre Serveur `IRC` :**
+
+  Dans `irssi` :
   ```irssi
-  /set dcc_own_ip votre.adresse.ip
+  /RAWLOG OPEN ~/debug.log
   ```
-  Remplacez votre.adresse.ip par votre adresse IP réelle sur le réseau.
+- **Passer d'une conversation privée à la page d'accueil d'`Irssi` :**
 
-- **Résultat** : Cette commande ajoutera automatiquement l'entrée suivante dans votre fichier de configuration ~/.irssi/config :
-  ```
-  "irc/dcc" = { dcc_own_ip = "<client_ip>"; };
-  };
-  ```
+  - Appuyez sur `Alt + 1` ou `Esc` suivi de `1` pour retourner à la fenêtre 1, qui est souvent la page d'accueil ou le canal principal.
+    
+  - Appuyez sur `Alt + flèche gauche` ou `Alt + flèche droite` pour naviguer entre les fenêtres.
+  Vous pouvez également utiliser `Ctrl + P` (fenêtre précédente) ou `Ctrl + N` (fenêtre suivante).
+
+  - Tapez `/window goto 1` dans n'importe quelle fenêtre pour revenir à la fenêtre 1.
+- **Adresse `IP` pour les transferts DCC**
+
+  - **Observation** :
+    Votre configuration indique `hostname = "127.0.0.1"` dans les paramètres du core. L'adresse `127.0.0.1` est l'adresse de bouclage (*localhost*) et n'est pas accessible depuis d'autres machines sur le réseau.
+  
+  - **Solution** :
+    Définissez votre adresse `IP` externe ou locale correcte en utilisant la commande suivante dans `Irssi` :
+    ```irssi
+    /set dcc_own_ip votre.adresse.ip
+    ```
+    Remplacez votre.adresse.ip par votre adresse IP réelle sur le réseau.
+  
+  - **Résultat** : Cette commande ajoutera automatiquement l'entrée suivante dans votre fichier de configuration `~/.irssi/config` :
+    ```
+    "irc/dcc" = { dcc_own_ip = "<client_ip>"; };
+    };
+    ```
 
 ### Envoi de fichier.
 #### Avec `irssi` :
@@ -237,19 +246,8 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
     - `<server_ip>` : Adresse `IP` de `Raf`.
     - `12345` : `Port` fourni par `Raf`.
 
-
-### Navigation dans irssi
-Pour passer de l'écran d'une conversation privée à la page d'accueil d'`Irssi` (généralement appelée "fenêtre active par défaut" ou "fenêtre 1") :
-
-- Appuyez sur `Alt + 1` ou `Esc` suivi de `1` pour retourner à la fenêtre 1, qui est souvent la page d'accueil ou le canal principal.
-  
-- Appuyez sur `Alt + flèche gauche` ou `Alt + flèche droite` pour naviguer entre les fenêtres.
-Vous pouvez également utiliser `Ctrl + P` (fenêtre précédente) ou `Ctrl + N` (fenêtre suivante).
-
-- Tapez `/window goto 1` dans n'importe quelle fenêtre pour revenir à la fenêtre 1.
-
-### Tester la suspention d'un client dans un channel
-#### Avec `nc` :
+## Tester la suspention d'un client dans un channel
+### Avec `nc` :
 
 - **1. Quand un client est dans un channel contenant plusieurs autres clients, faire un `Ctrl + Z`.**
 
