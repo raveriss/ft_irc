@@ -120,16 +120,16 @@ nc <server_ip> <port>
   ```bash
   kill -9 $(lsof -t -i :<port>)
   ```
-- **Fuites Mémoire et Vérification des Descripteurs Actifs pour `ircserv` (Port `6667`) via `Valgrind` :**
+- **Fuites Mémoire et Vérification des Descripteurs Actifs pour `ircserv` via `Valgrind` :**
   ```bash
-  valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv 6667 1912
+  valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv <port> <password>
   ```
 ### Utilisation d’Irssi
 - **Ouvrir le Fichier de Configuration d'`Irssi` avec `VS Code` :**
   ```bash
   code ~/.irssi/config
   ```
-- **Se Connecter à un Serveur IRC Local sur le Port `6667` :**
+- **Se Connecter à un Serveur IRC :**
 
   Dans `bash` :
   ```bash
@@ -137,12 +137,12 @@ nc <server_ip> <port>
   ```
   Dans `irssi` :
   ```irssi
-  /connect <server_ip> 6667
+  /connect <server_ip> <port>
   ```
-- **Se Connecter à un Serveur IRC Local sur le Port `6667` avec le Pseudo `Raf` et le Mot de Passe `1912` :**
+- **Se Connecter à un Serveur IRC avec le <port>, <nickname> et <password> :**
 
   ```bash
-  irssi -c <server_ip> -p 6667 -n Raf -w 1912
+  irssi -c <server_ip> -p <port> -n <nickname> -w <password>
   ```
 - **Pour Utiliser /RAWLOG OPEN ~/debug.log avec votre Serveur `IRC` :**
 
@@ -165,7 +165,7 @@ nc <server_ip> <port>
     
     - `ip -o -4 addr show enp3s0f0` : Affiche les informations d’adresse `IPv4` pour l’interface `enp3s0f0` en format compact.
     - `awk '{print $4}'` : Sélectionne la colonne contenant l’adresse `IP` avec le masque de sous-réseau.
-    - `cut -d/ -f1` : Supprime le masque de sous-réseau pour ne garder que l’adresse `IP` pure (ex., `10.31.6.11`).
+    - `cut -d/ -f1` : Supprime le masque de sous-réseau pour ne garder que l’adresse `IP` pure.
 - **Extraction de l’Adresse `IP` Principale :**
 
   ```bash
@@ -181,11 +181,11 @@ nc <server_ip> <port>
   ```irssi
   /set dcc_own_ip votre.adresse.ip
   ```
-  Remplacez votre.adresse.ip par votre adresse IP réelle sur le réseau (par exemple, 192.168.1.17).
+  Remplacez votre.adresse.ip par votre adresse IP réelle sur le réseau.
 
 - **Résultat** : Cette commande ajoutera automatiquement l'entrée suivante dans votre fichier de configuration ~/.irssi/config :
   ```
-  "irc/dcc" = { dcc_own_ip = "192.168.1.17"; };
+  "irc/dcc" = { dcc_own_ip = "<client_ip>"; };
   };
   ```
 
@@ -222,9 +222,9 @@ nc <server_ip> <port>
   Lancez la commande suivante pour vous connecter à `Raf` et recevoir le fichier :
 
   ```bash
-  nc 10.31.6.11 12345 > test.txt
+  nc <server_ip> 12345 > test.txt
   ```
-    - `10.31.6.11` : Adresse `IP` de `Raf`.
+    - `<server_ip>` : Adresse `IP` de `Raf`.
     - `12345` : `Port` fourni par `Raf`.
 
 
@@ -241,12 +241,12 @@ Vous pouvez également utiliser `Ctrl + P` (fenêtre précédente) ou `Ctrl + N`
 ### Tester la suspention d'un client dans un channel
 #### Avec `nc` :
 
-- **1. Quand un client est dans un channel contenant plusieurs autres clients, faire un ctrl+z.**
+- **1. Quand un client est dans un channel contenant plusieurs autres clients, faire un `CTRL + Z`.**
 
 Ce message devrait apparaitre :
 
 ```bash
-[1]+  Stopped                 nc 10.31.11.10 6667
+[1]+  Stopped                 nc <server_ip> <port>
 ```
 Cela signifie que ce client est maintenant suspendu.
 
