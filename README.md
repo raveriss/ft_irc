@@ -254,7 +254,7 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
 Ce message devrait apparaitre :
 
 ```bash
-[1]+  Stopped                 nc <server_ip> <port>
+[<n>]+  Stopped                 nc <server_ip> <port>
 ```
 Cela signifie que ce client est maintenant suspendu.
 
@@ -262,10 +262,11 @@ Cela signifie que ce client est maintenant suspendu.
 - **3. Effectuez la commande suivante avec le client suspendu :**
 
 ```bash
-fg % < nombre present entre crochet avant le "Stopped", ici c est 1 >
+fg % <n>
 ```
+Remplacez `<n>` par le numéro affiché entre crochets dans le message `Stopped`.
 
-Si votre projet IRC fonctionne correctement, apres cette commande les messages ecrits pendant qu'il etait suspendu devraient apparaitre dans le terminal.
+Si votre projet `IRC   fonctionne correctement, apres cette commande les messages ecrits pendant qu'il etait suspendu devraient apparaitre dans le terminal.
 
 ---
 
