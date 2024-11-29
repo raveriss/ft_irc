@@ -263,7 +263,9 @@ Si votre projet IRC fonctionne correctement, apres cette commande les messages e
 
 ## Contributeurs
 
-- raveriss - Développeur principal
+- [acatusse](https://github.com/0x2Anessie)
+- [lgoure](https://github.com/lukas94kdl)
+- [raveriss](https://github.com/raveriss) 
 
 ## Ressources Utilisées
 
