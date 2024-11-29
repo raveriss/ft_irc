@@ -238,6 +238,27 @@ Vous pouvez également utiliser `Ctrl + P` (fenêtre précédente) ou `Ctrl + N`
 
 - Tapez `/window goto 1` dans n'importe quelle fenêtre pour revenir à la fenêtre 1.
 
+### Tester la suspention d'un client dans un channel
+#### Avec `nc` :
+
+- **1. Quand un client est dans un channel contenant plusieurs autres clients, faire un ctrl+z.**
+
+Ce message devrait apparaitre :
+
+```bash
+[1]+  Stopped                 nc 10.31.11.10 6667
+```
+Cela signifie que ce client est maintenant suspendu.
+
+- **2. Envoyez maintenant plusieurs `PRIVMSG` dans le channel avec plusieurs clients qui y sont presents.**
+- **3. Effectuez la commande suivante avec le client suspendu :**
+
+```bash
+fg % < nombre present entre crochet avant le "Stopped", ici c est 1 >
+```
+
+Si votre projet IRC fonctionne correctement, apres cette commande les messages ecrits pendant qu'il etait suspendu devraient apparaitre dans le terminal.
+
 ---
 
 ## Contributeurs
