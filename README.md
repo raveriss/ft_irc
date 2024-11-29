@@ -156,7 +156,7 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
   `nc` (`netcat`) : Idéal pour des tests basiques et vérifier les échanges bruts avec le serveur.
   `irssi` : Offre une interface interactive, utile pour tester des fonctionnalités avancées comme la gestion des canaux ou les commandes administratives.
 
-## Commandes Utiles
+## Diagnostic et Debug
 ### Outils de Débogage et Diagnostic
 - **Vérification des Connexions Actives sur le Port `<port>` avec `lsof` :**
   ```bash
@@ -170,7 +170,7 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
   ```bash
   valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv <port> <password>
   ```
-### Utilisation d’`Irssi`
+## Utilisation d’`Irssi`
 - **Ouvrir le Fichier de Configuration d'`Irssi` avec `VS Code` :**
   ```bash
   code ~/.irssi/config
