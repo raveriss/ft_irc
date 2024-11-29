@@ -139,7 +139,7 @@ nc <server_ip> <port>
   ```irssi
   /connect <server_ip> <port>
   ```
-- **Se Connecter à un Serveur IRC avec le <port>, <nickname> et <password> :**
+- **Se Connecter à un Serveur IRC avec le `port`, `nickname` et `password` :**
 
   ```bash
   irssi -c <server_ip> -p <port> -n <nickname> -w <password>
@@ -241,7 +241,7 @@ Vous pouvez également utiliser `Ctrl + P` (fenêtre précédente) ou `Ctrl + N`
 ### Tester la suspention d'un client dans un channel
 #### Avec `nc` :
 
-- **1. Quand un client est dans un channel contenant plusieurs autres clients, faire un `CTRL + Z`.**
+- **1. Quand un client est dans un channel contenant plusieurs autres clients, faire un `Ctrl + Z`.**
 
 Ce message devrait apparaitre :
 
