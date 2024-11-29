@@ -22,7 +22,7 @@ Vous devez tester votre serveur à l'aide d'un vrai client IRC pour garantir la 
 
 ## Objectifs
 
-- Reproduire le fonctionnement d'un serveur **`IRC`** en C++98.
+- Reproduire le fonctionnement d'un serveur **`IRC`** en `C++98`.
 - Gérer plusieurs clients simultanément sans blocage.
 - Implémenter les principales commandes IRC comme `NICK`, `USER`, `JOIN`, `PRIVMSG`, etc.
 - Fournir un système d'authentification via un mot de passe à la connexion.
@@ -75,7 +75,7 @@ Vous devez tester votre serveur à l'aide d'un vrai client IRC pour garantir la 
 
 ## Compilation
 
-Utilisez le **`Makefile`** pour compiler le projet avec les options de compilation requises. Le projet doit se compiler en utilisant C++98 avec les flags `-Wall -Wextra -Werror`.
+Utilisez le **`Makefile`** pour compiler le projet avec les options de compilation requises. Le projet doit se compiler en utilisant `C++98` avec les flags `-Wall -Wextra -Werror`.
 
 **Commandes disponibles :**
 ```bash
