@@ -208,8 +208,8 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
     };
     ```
 
-### Envoi de fichier.
-#### Avec `irssi` :
+## Envoi de fichier.
+### Avec `irssi` :
 - **Envoyer un Fichier avec `DCC` :**
 
   ```irssi
@@ -221,7 +221,7 @@ Envoi de commandes `IRC` : Une fois connecté, entrez vos commandes `IRC` direct
   /dcc get Raf test.txt
   ```
 
-#### Avec `nc` :
+### Avec `nc` :
 
 
 - **1. Sur le client expéditeur (`Raf`) :**
